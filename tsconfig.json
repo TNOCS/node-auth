@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "moduleResolution": "node",
+        "target": "es5",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "noImplicitReturns": true,
+        "pretty": true,
+        "removeComments": true,
+        "outDir": "./dist"
+    }, "include": [
+        "typings/**/*.d.ts",
+        "src/**/*.ts"
+    ], "exclude": [
+        "node_modules"
+    ]
+}

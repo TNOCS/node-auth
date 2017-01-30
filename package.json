@@ -1,0 +1,55 @@
+{
+  "name": "node-auth",
+  "version": "0.0.1",
+  "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
+  "main": "./dist/lib/index.js",
+  "scripts": {
+    "start": "node dist/example/server.js",
+    "build": "tsc -w",
+    "postinstall": "typings install && tsc",
+    "test": "mocha -u tdd --timeout 999999 --colors dist\\tests\\**\\*.spec.js"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "mongodb",
+    "authentication",
+    "user management",
+    "login",
+    "jwt",
+    "json",
+    "web",
+    "token"
+  ],
+  "author": "Erik Vullings <erik.vullings@gmail.com>",
+  "license": "MIT",
+  "typings": "./dist/lib/index",
+  "files": [
+    "./dist/lib/"
+  ],
+  "devDependencies": {
+    "@types/chai": "^3.4.34",
+    "@types/mocha": "^2.2.38",
+    "@types/sinon": "^1.16.34",
+    "chai": "^3.5.0",
+    "chai-http": "^3.0.0",
+    "mocha": "^3.2.0",
+    "mongoose-mock": "^0.4.0",
+    "proxyquire": "^1.7.10",
+    "sinon": "^1.17.7",
+    "typescript": "^2.1.5",
+    "typings": "^2.1.0"
+  },
+  "dependencies": {
+    "bcrypt": "^1.0.2",
+    "bluebird": "^3.4.7",
+    "body-parser": "^1.15.2",
+    "config": "^1.24.0",
+    "express": "^4.14.0",
+    "jsonwebtoken": "^7.2.1",
+    "mongoose": "^4.7.7",
+    "morgan": "^1.7.0",
+    "nodemailer": "^2.7.2",
+    "nodemailer-mailgun-transport": "^1.2.4"
+  }
+}
