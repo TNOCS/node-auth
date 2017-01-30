@@ -1,6 +1,6 @@
-import { Request } from 'express';
-import { IUser } from './user';
-import { CRUD } from './crud';
+import { Request } from "express";
+import { IUser } from "./user";
+import { CRUD } from "./crud";
 export interface INodeAuthOptions {
     secretKey: string;
     expiresIn?: string;

@@ -6,9 +6,10 @@ var loginRoute = require("./routes/login");
 var verifyRoute = require("./routes/verify");
 function nodeAuth(app, options) {
     var secretKey = options.secretKey;
-    if (secretKey === null)
-        throw new Error('secretKey must be set');
-    var apiRoute = (options.api && typeof options.api === 'string') ? options.api : '/api';
+    if (secretKey === null) {
+        throw new Error("secretKey must be set");
+    }
+    var apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
     app.use(apiRoute, createRoutes(secretKey, options));
     return authenticateUser(secretKey, options.blockUnauthenticatedUser);
 }
@@ -23,21 +24,21 @@ function authenticateUser(secretKey, blockUnauthenticatedUser) {
             });
         }
         : function (req, res, next, msg) {
-            delete req['user'];
+            delete req["user"];
             next();
         };
     return function (req, res, next) {
         var token = userRoute.getToken(req);
         if (!token) {
-            authnErrorHandler(req, res, next, 'No token provided');
+            authnErrorHandler(req, res, next, "No token provided");
         }
         else {
             jwt.verify(token, secretKey, function (err, user) {
                 if (err) {
-                    authnErrorHandler(req, res, next, 'Failed to authenticate token.');
+                    authnErrorHandler(req, res, next, "Failed to authenticate token.");
                 }
                 else {
-                    req['user'] = user;
+                    req["user"] = user;
                     next();
                 }
             });
@@ -50,38 +51,38 @@ function createRoutes(secretKey, options) {
     userRoute.init(options);
     verifyRoute.init(options);
     createApiRoute(apiRoutes, options);
-    var hasLoginRoute = (options.login && typeof options.login === 'boolean') ? options.login : true;
+    var hasLoginRoute = (options.login && typeof options.login === "boolean") ? options.login : true;
     if (hasLoginRoute) {
-        var login = (options.login && typeof options.login === 'string') ? options.login : '/login';
+        var login = (options.login && typeof options.login === "string") ? options.login : "/login";
         apiRoutes.route(login)
             .post(loginRoute.login);
     }
-    var hasSignupRoute = (options.signup && typeof options.signup === 'boolean') ? options.signup : true;
+    var hasSignupRoute = (options.signup && typeof options.signup === "boolean") ? options.signup : true;
     if (hasSignupRoute) {
-        var signupRoute = (options.signup && typeof options.signup === 'string') ? options.signup : '/signup';
+        var signupRoute = (options.signup && typeof options.signup === "string") ? options.signup : "/signup";
         apiRoutes.route(signupRoute)
             .post(userRoute.signupUser);
     }
-    var hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === 'boolean') ? options.verify : true;
+    var hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "boolean") ? options.verify : true;
     if (hasVerificationRoute) {
-        var verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === 'string') ? options.verify.route : '/activate';
+        var verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "string") ? options.verify.route : "/activate";
         apiRoutes.route("" + verificationRoute)
             .get(verifyRoute.resendEmail);
         apiRoutes.route(verificationRoute + "/:id")
             .get(verifyRoute.verifyEmail);
     }
     apiRoutes.use(authenticateUser(secretKey, true));
-    var hasProfileRoute = (options.profile && typeof options.profile === 'boolean') ? options.profile : true;
+    var hasProfileRoute = (options.profile && typeof options.profile === "boolean") ? options.profile : true;
     if (hasProfileRoute) {
-        var profileRoute = (options.profile && typeof options.profile === 'string') ? options.profile : '/profile';
+        var profileRoute = (options.profile && typeof options.profile === "string") ? options.profile : "/profile";
         apiRoutes.route(profileRoute)
             .get(userRoute.getProfile)
             .put(userRoute.updateProfile)
             .delete(userRoute.deleteProfile);
     }
-    var hasUsersRoute = (options.users && typeof options.users === 'boolean') ? options.users : true;
+    var hasUsersRoute = (options.users && typeof options.users === "boolean") ? options.users : true;
     if (hasUsersRoute) {
-        var usersRoute = (options.users && typeof options.users === 'string') ? options.users : '/users';
+        var usersRoute = (options.users && typeof options.users === "string") ? options.users : "/users";
         apiRoutes.route(usersRoute)
             .get(userRoute.listUsers)
             .post(userRoute.createUser);
@@ -94,31 +95,31 @@ function createRoutes(secretKey, options) {
 }
 function createApiRoute(apiRoutes, options) {
     var routes = [];
-    var apiRoute = (options.api && typeof options.api === 'string') ? options.api : '/api';
-    var hasLoginRoute = (options.login && typeof options.login === 'boolean') ? options.login : true;
+    var apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
+    var hasLoginRoute = (options.login && typeof options.login === "boolean") ? options.login : true;
     if (hasLoginRoute) {
-        var loginRoute_1 = hasLoginRoute && (options.login && typeof options.login === 'string') ? options.login : '/login';
-        routes.push({ route: "" + apiRoute + loginRoute_1, message: 'POST: Login route, post email and password, returns JSON web token.' });
+        var loginRoute_1 = hasLoginRoute && (options.login && typeof options.login === "string") ? options.login : "/login";
+        routes.push({ route: "" + apiRoute + loginRoute_1, message: "POST: Login route, post email and password, returns JSON web token." });
     }
-    var hasSignupRoute = (options.signup && typeof options.signup === 'boolean') ? options.signup : true;
+    var hasSignupRoute = (options.signup && typeof options.signup === "boolean") ? options.signup : true;
     if (hasSignupRoute) {
-        var signupRoute = hasSignupRoute && (options.signup && typeof options.signup === 'string') ? options.signup : '/signup';
-        routes.push({ route: "" + apiRoute + signupRoute, message: 'POST: Signup route, post email and password, and optionally, first and name.' });
+        var signupRoute = hasSignupRoute && (options.signup && typeof options.signup === "string") ? options.signup : "/signup";
+        routes.push({ route: "" + apiRoute + signupRoute, message: "POST: Signup route, post email and password, and optionally, first and name." });
     }
-    var hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === 'boolean') ? options.verify : true;
+    var hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "boolean") ? options.verify : true;
     if (hasVerificationRoute) {
-        var verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === 'string') ? options.verify.route : '/activate';
-        routes.push({ route: "" + apiRoute + verificationRoute + "?email=[EMAIL]", message: 'GET: Activation route to resend your activation email.' });
-        routes.push({ route: "" + apiRoute + verificationRoute + "/[ID]?t=[TOKEN]", message: 'GET: Activation route to activate your account' });
+        var verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "string") ? options.verify.route : "/activate";
+        routes.push({ route: "" + apiRoute + verificationRoute + "?email=[EMAIL]", message: "GET: Activation route to resend your activation email." });
+        routes.push({ route: "" + apiRoute + verificationRoute + "/[ID]?t=[TOKEN]", message: "GET: Activation route to activate your account" });
     }
-    var hasProfileRoute = (options.profile && typeof options.profile === 'boolean') ? options.profile : true;
+    var hasProfileRoute = (options.profile && typeof options.profile === "boolean") ? options.profile : true;
     if (hasProfileRoute) {
-        var profileRoute = hasProfileRoute && (options.profile && typeof options.profile === 'string') ? options.profile : '/profile';
-        routes.push({ route: "" + apiRoute + profileRoute, message: 'GET: Returns your profile.' });
-        routes.push({ route: "" + apiRoute + profileRoute, message: 'PUT: Updates your profile, you can send first, name, email, and password.' });
-        routes.push({ route: "" + apiRoute + profileRoute, message: 'DELETE: Deletes your profile.' });
+        var profileRoute = hasProfileRoute && (options.profile && typeof options.profile === "string") ? options.profile : "/profile";
+        routes.push({ route: "" + apiRoute + profileRoute, message: "GET: Returns your profile." });
+        routes.push({ route: "" + apiRoute + profileRoute, message: "PUT: Updates your profile, you can send first, name, email, and password." });
+        routes.push({ route: "" + apiRoute + profileRoute, message: "DELETE: Deletes your profile." });
     }
-    apiRoutes.get('/', function (req, res) {
+    apiRoutes.get("/", function (req, res) {
         res.json(routes);
     });
 }

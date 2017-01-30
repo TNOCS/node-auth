@@ -5,19 +5,19 @@ var expiresIn;
 var secretKey;
 function init(options) {
     secretKey = options.secretKey;
-    expiresIn = options.expiresIn ? options.expiresIn : '1d';
+    expiresIn = options.expiresIn ? options.expiresIn : "1d";
 }
 exports.init = init;
 function login(req, res) {
-    var email = req['body'].email;
-    var pwd = req['body'].password;
+    var email = req["body"].email;
+    var pwd = req["body"].password;
     if (!email || !pwd) {
-        res.status(422).json({ success: false, message: 'Authentication failed. Body should contain a name and password property.' });
+        res.status(422).json({ success: false, message: "Authentication failed. Body should contain a name and password property." });
     }
     else {
         user_1.User.findOne({ email: email.toLowerCase() }, function (err, user) {
             if (err || !user) {
-                res.status(401).json({ success: false, message: 'Authentication failed.' });
+                res.status(401).json({ success: false, message: "Authentication failed." });
             }
             else if (user) {
                 user.comparePassword(pwd, function (err, isMatch) {
@@ -30,7 +30,7 @@ function login(req, res) {
                         res.json({ success: true, token: token, user: json });
                     }
                     else {
-                        res.status(401).json({ success: false, msg: 'Authentication failed.' });
+                        res.status(401).json({ success: false, msg: "Authentication failed." });
                     }
                 });
             }

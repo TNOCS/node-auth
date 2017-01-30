@@ -1,7 +1,7 @@
-import * as bcrypt from 'bcrypt';
-import { Request, Response } from 'express';
-import { User, IUser } from '../models/user';
-import { INodeAuthOptions } from '../models/options';
+import * as bcrypt from "bcrypt";
+import { Request, Response } from "express";
+import { User, IUser } from "../models/user";
+import { INodeAuthOptions } from "../models/options";
 
 const error = console.error;
 const urlRegex = /\$\{URL\}/g; // regex to replace ${URL} in templates
@@ -20,7 +20,7 @@ let confirmationMessageSendCallback: (err: Error, info: nodemailer.SentMessageIn
  * @param {INodeAuthOptions} options
  */
 export function init(options: INodeAuthOptions) {
-  if (!options.verify) return;
+  if (!options.verify) { return; }
   verificationURL = options.verify.baseUrl;
   mailService = options.verify.mailService;
   verifyMailOptions = options.verify.verifyMailOptions;
@@ -38,37 +38,37 @@ export function init(options: INodeAuthOptions) {
  * @param {Response} res
  */
 export function verifyEmail(req: Request, res: Response) {
-  const id = req.params['id'];
-  const token = req.query['t'];
+  const id = req.params["id"];
+  const token = req.query["t"];
   if (!id || !token) {
-    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please create a valid request!' });
+    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please create a valid request!" });
     return;
   }
   User.findById(id, (err, user) => {
     if (err || !user) {
-      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please create a valid request!' });
+      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please create a valid request!" });
       return;
     }
     bcrypt.compare(user.email, token)
       .then(ok => {
         if (!ok) {
-          res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please create a valid request!' });
+          res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please create a valid request!" });
           return;
         }
         user.verified = true;
         user.update(user, (err, result) => {
           if (err) {
             error(err);
-            res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Something did not work as expected. Please come back later and try again.' });
+            res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Something did not work as expected. Please come back later and try again." });
             return;
           }
-          res.status(HTTPStatusCodes.OK).json({ success: true, message: 'Your email was verified successfully. Thank you!' });
+          res.status(HTTPStatusCodes.OK).json({ success: true, message: "Your email was verified successfully. Thank you!" });
           sendConfirmationEmail(user);
         });
       })
       .catch(err => {
         // error(err);
-        res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please create a valid request!' });
+        res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please create a valid request!" });
       });
   });
 }
@@ -83,27 +83,27 @@ export function verifyEmail(req: Request, res: Response) {
  * @returns
  */
 export function resendEmail(req: Request, res: Response) {
-  const email = req.query['email'];
+  const email = req.query["email"];
   if (!email) {
-    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please send your email to activate your account.' });
+    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please send your email to activate your account." });
     return;
   }
   User.findOne( { email: email.toLowerCase()}, (err, user) => {
     if (err || !user) {
-      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'Please signup first.' });
+      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please signup first." });
       return;
     }
     if (user.verified) {
-      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'User is already verified.' });
+      res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "User is already verified." });
       return;
     }
     sendVerificationMessage(user);
-    res.status(HTTPStatusCodes.OK).json({ success: true, message: 'Verification email sent.' });
+    res.status(HTTPStatusCodes.OK).json({ success: true, message: "Verification email sent." });
   });
 }
 
 function sendConfirmationEmail(user: IUser) {
-  if (!confirmMailOptions) return;
+  if (!confirmMailOptions) { return; }
   const mailOptions = JSON.parse(JSON.stringify(confirmMailOptions)); // clone
   mailOptions.to = user.email;
   mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
@@ -117,7 +117,7 @@ function sendConfirmationEmail(user: IUser) {
  * @param {(err: Error, info: nodemailer.SentMessageInfo) => void} [callback]
  */
 export function sendVerificationMessage(user: IUser) {
-  if (!verifyMailOptions) return;
+  if (!verifyMailOptions) { return; }
   bcrypt.hash(user.email, 10, (err, hash) => {
     if (err) {
       error(err);

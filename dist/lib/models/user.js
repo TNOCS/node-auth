@@ -13,13 +13,14 @@ var UserSchema = new Schema({
         dropDups: true,
         validate: {
             validator: function (email, cb) {
-                if (!validateEmailAddress(email))
+                if (!validateEmailAddress(email)) {
                     cb(false);
+                }
                 exports.User.find({ email: email }, function (err, docs) {
                     cb(docs.length === 0);
                 });
             },
-            message: 'User already exists!'
+            message: "User already exists!"
         }
     },
     password: String,
@@ -49,13 +50,13 @@ var UserSchema = new Schema({
 }, {
     versionKey: false
 });
-UserSchema.pre('save', function (next) {
+UserSchema.pre("save", function (next) {
     var now = new Date();
     var user = this;
     if (!user.createdAt) {
         user.createdAt = now;
     }
-    if (user.password && this.isModified('password') || this.isNew) {
+    if (user.password && this.isModified("password") || this.isNew) {
         bcrypt.genSalt(10, function (err, salt) {
             if (err) {
                 return next(err);
@@ -86,5 +87,5 @@ function validateEmailAddress(email) {
     return emailRegex.test(email);
 }
 exports.validateEmailAddress = validateEmailAddress;
-exports.User = mongoose.model('User', UserSchema);
+exports.User = mongoose.model("User", UserSchema);
 //# sourceMappingURL=user.js.map

@@ -1,6 +1,6 @@
-import { Request } from 'express';
-import { IUser } from './user';
-import { CRUD } from './crud';
+import { Request } from "express";
+import { IUser } from "./user";
+import { CRUD } from "./crud";
 
 export interface INodeAuthOptions {
   /** The secret for encrypting and decrypting the JWT */

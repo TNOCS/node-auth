@@ -1,14 +1,14 @@
-process.env.NODE_ENV = 'test';
+process.env.NODE_ENV = "test";
 
-import { User, IUser, IUserModel } from '../../lib/models/user';
-import * as chai from 'chai';
-import * as server from '../../example/server';
-import * as bcrypt from 'bcrypt';
+import { User, IUser, IUserModel } from "../../lib/models/user";
+import * as chai from "chai";
+import * as server from "../../example/server";
+import * as bcrypt from "bcrypt";
 
 chai.should();
-chai.use(require('chai-http'));
+chai.use(require("chai-http"));
 
-describe('Verify route', () => {
+describe("Verify route", () => {
   let adminUser: IUserModel;
   let regularUser: IUserModel;
   let users: IUser[] = [];
@@ -24,24 +24,24 @@ describe('Verify route', () => {
   before((done: Function) => {
     User.remove({}, (err) => {
       adminUser = new User({
-        name: 'Erik Vullings',
-        email: 'erik.vullings@gmail.com',
-        password: 'password',
+        name: "Erik Vullings",
+        email: "erik.vullings@gmail.com",
+        password: "password",
         verified: false,
         admin: true,
         data: {}
       });
       regularUser = new User({
-        name: 'John Smith',
-        email: 'john.smith@gmail.com',
-        password: 'johnny',
+        name: "John Smith",
+        email: "john.smith@gmail.com",
+        password: "johnny",
         verified: false,
         data: {}
       });
       const anotherUser = new User({
-        name: 'Jane Doe',
-        email: 'jane.doe@gmail.com',
-        password: 'jane',
+        name: "Jane Doe",
+        email: "jane.doe@gmail.com",
+        password: "jane",
         verified: true,
         data: {}
       });
@@ -58,10 +58,10 @@ describe('Verify route', () => {
     });
   });
 
-  describe('/GET /api/users/activate?email=[EMAIL]', () => {
-    it('should not be able to resend an email without specifying the email', (done: Function) => {
+  describe("/GET /api/users/activate?email=[EMAIL]", () => {
+    it("should not be able to resend an email without specifying the email", (done: Function) => {
       chai.request(server)
-        .get('/api/activate')
+        .get("/api/activate")
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -69,9 +69,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to resend an activation email with an invalid email', (done: Function) => {
+    it("should not be able to resend an activation email with an invalid email", (done: Function) => {
       chai.request(server)
-        .get('/api/activate?email=unknown')
+        .get("/api/activate?email=unknown")
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -79,9 +79,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to resend an activation email with an unknown email', (done: Function) => {
+    it("should not be able to resend an activation email with an unknown email", (done: Function) => {
       chai.request(server)
-        .get('/api/activate?email=unknown@gmail.com')
+        .get("/api/activate?email=unknown@gmail.com")
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -89,9 +89,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should be able to resend an activation email with an known email for an unverified user', (done: Function) => {
+    it("should be able to resend an activation email with an known email for an unverified user", (done: Function) => {
       chai.request(server)
-        .get('/api/activate?email=' + users[1].email)
+        .get("/api/activate?email=" + users[1].email)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
           res.body.success.should.be.true;
@@ -99,9 +99,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to resend an activation email with a known VERIFIED email', (done: Function) => {
+    it("should not be able to resend an activation email with a known VERIFIED email", (done: Function) => {
       chai.request(server)
-        .get('/api/activate?email=' + users[2].email)
+        .get("/api/activate?email=" + users[2].email)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -110,10 +110,10 @@ describe('Verify route', () => {
     });
   });
 
-  describe('/GET /api/users/activate/:id?t=[TOKEN]', () => {
-    it('should not be able to activate an account without id', (done: Function) => {
+  describe("/GET /api/users/activate/:id?t=[TOKEN]", () => {
+    it("should not be able to activate an account without id", (done: Function) => {
       chai.request(server)
-        .get('/api/activate')
+        .get("/api/activate")
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -121,9 +121,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to activate an account with an invalid id', (done: Function) => {
+    it("should not be able to activate an account with an invalid id", (done: Function) => {
       chai.request(server)
-        .get('/api/activate/12345678?t=1234')
+        .get("/api/activate/12345678?t=1234")
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
           res.body.success.should.be.false;
@@ -131,7 +131,7 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to activate an account without token', (done: Function) => {
+    it("should not be able to activate an account without token", (done: Function) => {
       const id = users[1]._id.toString();
       chai.request(server)
         .get(`/api/activate/${id}`)
@@ -142,9 +142,9 @@ describe('Verify route', () => {
         });
     });
 
-    it('should not be able to activate an account with an incorrect token', (done: Function) => {
+    it("should not be able to activate an account with an incorrect token", (done: Function) => {
       const id = users[1]._id.toString();
-      const token = '123';
+      const token = "123";
       chai.request(server)
         .get(`/api/activate/${id}?t=${token}`)
         .end((err, res) => {
@@ -154,7 +154,7 @@ describe('Verify route', () => {
         });
     });
 
-    it('should be able to activate an account with a correct token', (done: Function) => {
+    it("should be able to activate an account with a correct token", (done: Function) => {
       const id = users[1]._id.toString();
       bcrypt.hash(users[1].email, 10, (err, hash) => {
         const token = hash;

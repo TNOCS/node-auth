@@ -1,7 +1,7 @@
-import { NextFunction } from 'express';
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
-import * as bluebird from 'bluebird';
+import { NextFunction } from "express";
+import * as mongoose from "mongoose";
+import * as bcrypt from "bcrypt";
+import * as bluebird from "bluebird";
 
 (<any>mongoose).Promise = bluebird;
 const Schema = mongoose.Schema;
@@ -57,12 +57,12 @@ const UserSchema = new Schema({
     dropDups: true,
     validate: {
       validator: (email, cb) => {
-        if (!validateEmailAddress(email)) cb(false);
+        if (!validateEmailAddress(email)) { cb(false); }
         User.find({ email: email }, (err, docs) => {
           cb(docs.length === 0);
         });
       },
-      message: 'User already exists!'
+      message: "User already exists!"
     }
   },
   password: String,
@@ -94,13 +94,13 @@ const UserSchema = new Schema({
     versionKey: false
   });
 
-UserSchema.pre('save', function (next: NextFunction) {
+UserSchema.pre("save", function (next: NextFunction) {
   const now = new Date();
   let user: IUser = this;
   if (!user.createdAt) {
     user.createdAt = now;
   }
-  if (user.password && this.isModified('password') || this.isNew) {
+  if (user.password && this.isModified("password") || this.isNew) {
     bcrypt.genSalt(10, (err, salt) => {
       if (err) {
         return next(err);
@@ -144,5 +144,5 @@ export function validateEmailAddress(email: string) {
 /**
  * The server side User class, with additional Mongoose functionality to save it.
  */
-export const User = mongoose.model<IUserModel>('User', UserSchema);
+export const User = mongoose.model<IUserModel>("User", UserSchema);
 

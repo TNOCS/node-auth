@@ -1,8 +1,8 @@
 // See also https://scotch.io/tutorials/authenticate-a-node-js-api-with-json-web-tokens
-import { Request, Response } from 'express';
-import { User, IUser, IUserModel, validateEmailAddress } from '../models/user';
-import { CRUD } from '../models/crud';
-import { INodeAuthOptions } from '../models/options';
+import { Request, Response } from "express";
+import { User, IUser, IUserModel, validateEmailAddress } from "../models/user";
+import { CRUD } from "../models/crud";
+import { INodeAuthOptions } from "../models/options";
 
 // export type CRUD = 'create' | 'update' | 'delete';
 export type UserChangedEvent = (user: IUser, req: Request, change: CRUD) => IUser | void;
@@ -21,7 +21,7 @@ let signupAllowed = false;
  */
 export function init(options: INodeAuthOptions) {
   onUserChanged = options.onUserChanged;
-  if (!options.hasOwnProperty('signup') || options.signup) signupAllowed = true;
+  if (!options.hasOwnProperty("signup") || options.signup) { signupAllowed = true; }
 }
 
 /**
@@ -33,15 +33,14 @@ export function init(options: INodeAuthOptions) {
  * @returns
  */
 export function listUsers(req: Request, res: Response) {
-  const user: IUser = req['user'];
+  const user: IUser = req["user"];
   if (!user.admin) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request all users. Grow up and become an admin first!' });
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: "You are not authorised to request all users. Grow up and become an admin first!" });
     return;
   }
-  // TODO Add skip and limit parameters: http://stackoverflow.com/a/5540562/319711
   User.find({}, (err, users: IUserModel[]) => {
     if (err) {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Error retreiving users.' });
+      res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: "Error retreiving users." });
       return;
     }
     let filteredUsers = users.map(u => {
@@ -62,17 +61,16 @@ export function listUsers(req: Request, res: Response) {
  * @returns
  */
 export function getUser(req: Request, res: Response) {
-  const id: string = req.params['id'];
-  const user: IUser = req['user'];
+  const id: string = req.params["id"];
+  const user: IUser = req["user"];
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request this user.' });
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: "You are not authorised to request this user." });
     return;
   }
-  // TODO Add skip and limit parameters: http://stackoverflow.com/a/5540562/319711
   User.findById(id, (err, user: IUser) => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retreiving user.' });
+      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Error retreiving user." });
       return;
     }
     delete user.password;
@@ -92,7 +90,7 @@ export function getUser(req: Request, res: Response) {
 export function signupUser(req: Request, res: Response) {
   const token = getToken(req);
   if (token) {
-    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'You are already signed in. Please logout first.'});
+    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "You are already signed in. Please logout first."});
     return;
   }
   createNewUser(req, res);
@@ -108,9 +106,9 @@ export function signupUser(req: Request, res: Response) {
  * @returns
  */
 export function createUser(req: Request, res: Response) {
-  const adminUser = <IUser> req['user'];
+  const adminUser = <IUser> req["user"];
   if (!adminUser || !adminUser.admin) {
-    res.status(HTTPStatusCodes.METHOD_NOT_ALLOWED).json( { success: false, message: 'Regular users cannot create new user. Ask an administrator.' });
+    res.status(HTTPStatusCodes.METHOD_NOT_ALLOWED).json( { success: false, message: "Regular users cannot create new user. Ask an administrator." });
     return;
   }
   createNewUser(req, res);
@@ -125,14 +123,13 @@ export function createUser(req: Request, res: Response) {
  * @returns
  */
 function createNewUser(req: Request, res: Response) {
-  const name = req['body'].name;
-  const email = req['body'].email;
-  const password = req['body'].password;
-  const admin = req['body'].admin;
-  // TODO Add other default properties or check for a user object
+  const name = req["body"].name;
+  const email = req["body"].email;
+  const password = req["body"].password;
+  const admin = req["body"].admin;
 
   if (!name || !email || !password || !validateEmailAddress(email)) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Signup with name, email and password!' });
+    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: "Signup with name, email and password!" });
     return;
   }
 
@@ -141,12 +138,12 @@ function createNewUser(req: Request, res: Response) {
     email: email.toLowerCase(),
     password: password,
     verified: false,
-    admin: req['user'] && req['user'].admin ? admin : false, // If the request is created by an admin, allow him to set the admin property.
+    admin: req["user"] && req["user"].admin ? admin : false, // If the request is created by an admin, allow him to set the admin property.
     data: {}
   });
 
   if (onUserChanged) {
-    let changedUser = onUserChanged(user, req, 'create');
+    let changedUser = onUserChanged(user, req, "create");
     if (changedUser) {
       if (changedUser.verified) { user.verified = changedUser.verified; }
       if (changedUser.admin) { user.admin = changedUser.admin; }
@@ -167,18 +164,17 @@ function createNewUser(req: Request, res: Response) {
  * @returns
  */
 export function updateUser(req: Request, res: Response) {
-  // TODO Add check that we don't set properties that aren't allowed
-  const updatedUser: IUser = req['body'];
-  const id: string = req.params['id'];
-  const user: IUser = req['user'];
+  const updatedUser: IUser = req["body"];
+  const id: string = req.params["id"];
+  const user: IUser = req["user"];
 
   if (!id) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
+    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: "Specify the user\'s ID" });
     return;
   }
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Request denied' });
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: "Request denied" });
     return;
   }
 
@@ -187,14 +183,14 @@ export function updateUser(req: Request, res: Response) {
   }
 
   if (onUserChanged) {
-    onUserChanged(updatedUser, req, 'update');
+    onUserChanged(updatedUser, req, "update");
   }
 
   // The { new: true } option means it will return the updated document
   // See http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
   User.findByIdAndUpdate(id, updatedUser, { new: true }, (err, finalUser) => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
+      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal server error. Please try again later." });
       return;
     }
     const u = <IUser>finalUser.toJSON();
@@ -213,26 +209,26 @@ export function updateUser(req: Request, res: Response) {
  * @returns
  */
 export function deleteUser(req: Request, res: Response) {
-  const id: string = req.params['id'];
-  const user: IUser = req['user'];
+  const id: string = req.params["id"];
+  const user: IUser = req["user"];
 
   if (!id) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
+    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: "Specify the user\'s ID" });
     return;
   }
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Request denied' });
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: "Request denied" });
     return;
   }
 
   if (onUserChanged) {
-    onUserChanged(user, req, 'delete');
+    onUserChanged(user, req, "delete");
   }
 
   User.findByIdAndRemove(id, err => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
+      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal server error. Please try again later." });
       return;
     }
     res.json({ success: true });
@@ -284,9 +280,9 @@ export function deleteProfile(req: Request, res: Response) {
  ********************/
 
 function setUserIdAsParameter(req: Request) {
-  const user: IUser = req['user'];
-  if (!req.params) req.params = {};
-  req.params['id'] = user._id.toString();
+  const user: IUser = req["user"];
+  if (!req.params) { req.params = {}; }
+  req.params["id"] = user._id.toString();
 }
 
 /**
@@ -300,7 +296,7 @@ function saveUser(user: IUserModel, req: Request, res: Response) {
   user.save(err => {
     if (err) {
       error(err);
-      return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: 'User could not be created.' });
+      return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: "User could not be created." });
     }
     // log('User saved successfully');
     const json = <IUser> user.toJSON();
@@ -317,5 +313,5 @@ function saveUser(user: IUserModel, req: Request, res: Response) {
  * @returns
  */
 export function getToken(req: Request) {
-  return req['body']['token'] || req['query']['token'] || req.headers['x-access-token'] || req.headers['authorization'];
+  return req["body"]["token"] || req["query"]["token"] || req.headers["x-access-token"] || req.headers["authorization"];
 }

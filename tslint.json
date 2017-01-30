@@ -22,8 +22,9 @@
         ],
         "quotemark": [
             true,
-            "single"
+            "double"
         ],
+        "curly": true,
         "semicolon": [
             true,
             "always"
