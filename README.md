@@ -1,4 +1,7 @@
 # node-auth
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/83c457cab2904027a1365e06c48991dd)](https://www.codacy.com/app/erikvullings/node-auth?utm_source=github.com&utm_medium=referral&utm_content=TNOCS/node-auth&utm_campaign=badger)
+
 User management node-express-mongodb middleware
 
 node-auth is an express middleware for authentication, which creates a REST API with multiple endpoints. The default routes are:
