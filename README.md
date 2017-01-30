@@ -1,3 +1,5 @@
+<a href="https://codeclimate.com/github/TNOCS/node-auth"><img src="https://codeclimate.com/github/TNOCS/node-auth/badges/gpa.svg" /></a>
+
 # node-auth
 User management node-express-mongodb middleware
 
