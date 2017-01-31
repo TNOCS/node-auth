@@ -5,7 +5,7 @@
   "main": "./dist/lib/index.js",
   "scripts": {
     "start": "node dist/example/server.js",
-    "build": "tsc -w",
+    "build": "tsc",
     "postinstall": "typings install && tsc",
     "test": "mocha -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js"
   },

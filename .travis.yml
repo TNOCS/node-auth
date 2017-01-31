@@ -12,5 +12,7 @@ addons:
     - g++-4.8
 services:
   - mongodb
+script:
+    - npm run build
 env:
   - TRAVIS=travis CXX=g++-4.8
