@@ -7,7 +7,7 @@
     "start": "node dist/example/server.js",
     "build": "tsc -w",
     "postinstall": "typings install && tsc",
-    "test": "mocha -u tdd --timeout 999999 --colors dist\\tests\\**\\*.spec.js"
+    "test": "mocha -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js"
   },
   "keywords": [
     "node",
