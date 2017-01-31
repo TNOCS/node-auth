@@ -39,8 +39,7 @@ function verifyEmail(req, res) {
                 res.status(400).json({ success: false, message: "Please create a valid request!" });
                 return;
             }
-            user.verified = true;
-            user.update(user, function (err, result) {
+            user.update({ verified: true }, function (err, result) {
                 if (err) {
                     error(err);
                     res.status(500).json({ success: false, message: "Something did not work as expected. Please come back later and try again." });

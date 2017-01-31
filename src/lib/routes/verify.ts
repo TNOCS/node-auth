@@ -55,8 +55,7 @@ export function verifyEmail(req: Request, res: Response) {
           res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "Please create a valid request!" });
           return;
         }
-        user.verified = true;
-        user.update(user, (err, result) => {
+        user.update({ verified: true }, (err, result) => {
           if (err) {
             error(err);
             res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Something did not work as expected. Please come back later and try again." });
