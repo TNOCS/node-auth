@@ -40,7 +40,7 @@ function getRoute(route, defaultRoute) {
         return route;
     }
     else {
-        return (typeof route == null || !route) ? defaultRoute : undefined;
+        return (route == null || !route) ? defaultRoute : null;
     }
 }
 function createApiRoute(apiRoutes, options) {

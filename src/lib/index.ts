@@ -53,7 +53,7 @@ function getRoute(route: string | boolean, defaultRoute: string) {
   if (typeof route === "string") {
     return route;
   } else {
-    return (typeof route == null || !route) ? defaultRoute : undefined;
+    return (route == null || !route) ? defaultRoute : null;
   }
 }
 
