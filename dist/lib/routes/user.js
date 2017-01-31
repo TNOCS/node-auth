@@ -150,6 +150,13 @@ function deleteUser(req, res) {
     });
 }
 exports.deleteUser = deleteUser;
+function setUserIdAsParameter(req) {
+    var user = req["user"];
+    if (!req.params) {
+        req.params = {};
+    }
+    req.params["id"] = user._id.toString();
+}
 function getProfile(req, res) {
     setUserIdAsParameter(req);
     getUser(req, res);
@@ -165,13 +172,6 @@ function deleteProfile(req, res) {
     deleteUser(req, res);
 }
 exports.deleteProfile = deleteProfile;
-function setUserIdAsParameter(req) {
-    var user = req["user"];
-    if (!req.params) {
-        req.params = {};
-    }
-    req.params["id"] = user._id.toString();
-}
 function saveUser(user, req, res) {
     user.save(function (err) {
         if (err) {

@@ -239,6 +239,12 @@ export function deleteUser(req: Request, res: Response) {
  * PROFILE FUNCTIONS
  ********************/
 
+function setUserIdAsParameter(req: Request) {
+  const user: IUser = req["user"];
+  if (!req.params) { req.params = {}; }
+  req.params["id"] = user._id.toString();
+}
+
 /**
  * Get the user's profile
  *
@@ -273,16 +279,6 @@ export function updateProfile(req: Request, res: Response) {
 export function deleteProfile(req: Request, res: Response) {
   setUserIdAsParameter(req);
   deleteUser(req, res);
-}
-
-/********************
- * INTERNAL FUNCTIONS
- ********************/
-
-function setUserIdAsParameter(req: Request) {
-  const user: IUser = req["user"];
-  if (!req.params) { req.params = {}; }
-  req.params["id"] = user._id.toString();
 }
 
 /**

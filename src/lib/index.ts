@@ -7,29 +7,6 @@ import * as verifyRoute from "./routes/verify";
 import { INodeAuthOptions } from "./models/options";
 
 /**
- * Main function is returned to the express app.
- * It sets up the API routes:
- * - Public routes to login and get an overview of the API
- * - All routes created after calling it are being authenticated
- *
- * @export
- * @param {Application} app
- * @param {INodeAuthOptions} options
- * @returns
- */
-export function nodeAuth(app: Application, options: INodeAuthOptions): (req: Request, res: Response, next: NextFunction) => void {
-  const secretKey = options.secretKey;
-  if (secretKey === null) { throw new Error("secretKey must be set"); }
-
-  const apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
-
-  // apply the routes to our application with the prefix /api
-  app.use(apiRoute, createRoutes(secretKey, options));
-
-  return authenticateUser(secretKey, options.blockUnauthenticatedUser);
-}
-
-/**
  * Return a function that authenticates the user, and sets the User details as req['user']: IUser (without pwd).
  *
  * @param {string} secretKey
@@ -72,6 +49,52 @@ function authenticateUser(secretKey: string, blockUnauthenticatedUser = true) {
   };
 }
 
+/**
+ * Small piece of documentation of the API, available at '/api'.
+ *
+ * @param {Router} apiRoutes
+ * @param {INodeAuthOptions} options
+ */
+function createApiRoute(apiRoutes: Router, options: INodeAuthOptions) {
+  let routes = [];
+
+  const apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
+
+  const login = getRoute(options.login, "/login");
+  if (login) {
+    routes.push({ route: `${apiRoute}${login}`, message: "POST: Login route, post email and password, returns JSON web token." });
+  }
+
+  const signupRoute = getRoute(options.signup, "/signup");
+  if (signupRoute) {
+    routes.push({ route: `${apiRoute}${signupRoute}`, message: "POST: Signup route, post email and password, and optionally, first and name." });
+  }
+
+  const verificationRoute = getRoute(options.verify && options.verify.route, "/activate");
+  if (verificationRoute) {
+    routes.push({ route: `${apiRoute}${verificationRoute}?email=[EMAIL]`, message: "GET: Activation route to resend your activation email." });
+    routes.push({ route: `${apiRoute}${verificationRoute}/[ID]?t=[TOKEN]`, message: "GET: Activation route to activate your account" });
+  }
+
+  const profileRoute = getRoute(options.profile, "/profile");
+  if (profileRoute) {
+    routes.push({ route: `${apiRoute}${profileRoute}`, message: "GET: Returns your profile." });
+    routes.push({ route: `${apiRoute}${profileRoute}`, message: "PUT: Updates your profile, you can send first, name, email, and password." });
+    routes.push({ route: `${apiRoute}${profileRoute}`, message: "DELETE: Deletes your profile." });
+  }
+  apiRoutes.get("/", (req: Request, res: Response) => {
+    res.json(routes);
+  });
+}
+
+function getRoute(route: string | boolean, defaultRoute: string) {
+  if (typeof route === "string") {
+    return route;
+  } else {
+    return (typeof route === "undefined" || !route) ? defaultRoute : undefined;
+  }
+}
+
 function createRoutes(secretKey: string, options: INodeAuthOptions) {
   const apiRoutes = Router();
   loginRoute.init(options);
@@ -80,28 +103,20 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
 
   createApiRoute(apiRoutes, options);
 
-  const hasLoginRoute = (options.login && typeof options.login === "boolean") ? options.login : true;
-  if (hasLoginRoute) {
-    // route to authenticate a user (e.g. POST http://localhost:3210/api/login)
-    const login = (options.login && typeof options.login === "string") ? options.login : "/login";
-    // const expiresIn = options.expiresIn ? options.expiresIn : '1d';
-    // createLoginRoute(secretKey, apiRoutes, loginRoute, expiresIn);
+  const login = getRoute(options.login, "/login");
+  if (login) {
     apiRoutes.route(login)
       .post(loginRoute.login);
   }
 
-  const hasSignupRoute = (options.signup && typeof options.signup === "boolean") ? options.signup : true;
-  if (hasSignupRoute) {
-    // route to create a user (e.g. POST http://localhost:3210/api/signup)
-    const signupRoute = (options.signup && typeof options.signup === "string") ? options.signup : "/signup";
+  const signupRoute = getRoute(options.signup, "/signup");
+  if (signupRoute) {
     apiRoutes.route(signupRoute)
       .post(userRoute.signupUser);
   }
 
-  const hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "boolean") ? options.verify : true;
-  if (hasVerificationRoute) {
-    const verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "string") ? options.verify.route : "/activate";
-
+  const verificationRoute = getRoute(options.verify && options.verify.route, "/activate");
+  if (verificationRoute) {
     apiRoutes.route(`${verificationRoute}`)
       .get(verifyRoute.resendEmail);
 
@@ -113,20 +128,16 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
 
   apiRoutes.use(authenticateUser(secretKey, true)); // Always block non-authenticated users for all API calls
 
-  const hasProfileRoute = (options.profile && typeof options.profile === "boolean") ? options.profile : true;
-  if (hasProfileRoute) {
-    // route to read/update a user (e.g. POST http://localhost:3210/api/profile)
-    const profileRoute = (options.profile && typeof options.profile === "string") ? options.profile : "/profile";
+  const profileRoute = getRoute(options.profile, "/profile");
+  if (profileRoute) {
     apiRoutes.route(profileRoute)
       .get(userRoute.getProfile)
       .put(userRoute.updateProfile)
       .delete(userRoute.deleteProfile);
   }
 
-  const hasUsersRoute = (options.users && typeof options.users === "boolean") ? options.users : true;
-  if (hasUsersRoute) {
-    // route to create a user (e.g. POST http://localhost:3210/api/users)
-    const usersRoute = (options.users && typeof options.users === "string") ? options.users : "/users";
+  const usersRoute = getRoute(options.users, "/users");
+  if (usersRoute) {
     apiRoutes.route(usersRoute)
       .get(userRoute.listUsers)
       .post(userRoute.createUser);
@@ -141,38 +152,24 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
 }
 
 /**
- * Small piece of documentation of the API, available at '/api'.
+ * Main function is returned to the express app.
+ * It sets up the API routes:
+ * - Public routes to login and get an overview of the API
+ * - All routes created after calling it are being authenticated
  *
- * @param {Router} apiRoutes
+ * @export
+ * @param {Application} app
  * @param {INodeAuthOptions} options
+ * @returns
  */
-function createApiRoute(apiRoutes: Router, options: INodeAuthOptions) {
-  let routes = [];
+export function nodeAuth(app: Application, options: INodeAuthOptions): (req: Request, res: Response, next: NextFunction) => void {
+  const secretKey = options.secretKey;
+  if (secretKey === null) { throw new Error("secretKey must be set"); }
+
   const apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
-  const hasLoginRoute = (options.login && typeof options.login === "boolean") ? options.login : true;
-  if (hasLoginRoute) {
-    const loginRoute = hasLoginRoute && (options.login && typeof options.login === "string") ? options.login : "/login";
-    routes.push({ route: `${apiRoute}${loginRoute}`, message: "POST: Login route, post email and password, returns JSON web token." });
-  }
-  const hasSignupRoute = (options.signup && typeof options.signup === "boolean") ? options.signup : true;
-  if (hasSignupRoute) {
-    const signupRoute = hasSignupRoute && (options.signup && typeof options.signup === "string") ? options.signup : "/signup";
-    routes.push({ route: `${apiRoute}${signupRoute}`, message: "POST: Signup route, post email and password, and optionally, first and name." });
-  }
-  const hasVerificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "boolean") ? options.verify : true;
-  if (hasVerificationRoute) {
-    const verificationRoute = (options.verify && options.verify.route && typeof options.verify.route === "string") ? options.verify.route : "/activate";
-    routes.push({ route: `${apiRoute}${verificationRoute}?email=[EMAIL]`, message: "GET: Activation route to resend your activation email." });
-    routes.push({ route: `${apiRoute}${verificationRoute}/[ID]?t=[TOKEN]`, message: "GET: Activation route to activate your account" });
-  }
-  const hasProfileRoute = (options.profile && typeof options.profile === "boolean") ? options.profile : true;
-  if (hasProfileRoute) {
-    const profileRoute = hasProfileRoute && (options.profile && typeof options.profile === "string") ? options.profile : "/profile";
-    routes.push({ route: `${apiRoute}${profileRoute}`, message: "GET: Returns your profile." });
-    routes.push({ route: `${apiRoute}${profileRoute}`, message: "PUT: Updates your profile, you can send first, name, email, and password." });
-    routes.push({ route: `${apiRoute}${profileRoute}`, message: "DELETE: Deletes your profile." });
-  }
-  apiRoutes.get("/", (req: Request, res: Response) => {
-    res.json(routes);
-  });
+
+  // apply the routes to our application with the prefix /api
+  app.use(apiRoute, createRoutes(secretKey, options));
+
+  return authenticateUser(secretKey, options.blockUnauthenticatedUser);
 }
