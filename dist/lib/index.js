@@ -35,6 +35,14 @@ function authenticateUser(secretKey, blockUnauthenticatedUser) {
         }
     };
 }
+function getRoute(route, defaultRoute) {
+    if (typeof route === "string") {
+        return route;
+    }
+    else {
+        return (typeof route == null || !route) ? defaultRoute : undefined;
+    }
+}
 function createApiRoute(apiRoutes, options) {
     var routes = [];
     var apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
@@ -60,14 +68,6 @@ function createApiRoute(apiRoutes, options) {
     apiRoutes.get("/", function (req, res) {
         res.json(routes);
     });
-}
-function getRoute(route, defaultRoute) {
-    if (typeof route === "string") {
-        return route;
-    }
-    else {
-        return (typeof route === "undefined" || !route) ? defaultRoute : undefined;
-    }
 }
 function createRoutes(secretKey, options) {
     var apiRoutes = express_1.Router();

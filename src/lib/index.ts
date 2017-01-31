@@ -49,6 +49,14 @@ function authenticateUser(secretKey: string, blockUnauthenticatedUser = true) {
   };
 }
 
+function getRoute(route: string | boolean, defaultRoute: string) {
+  if (typeof route === "string") {
+    return route;
+  } else {
+    return (typeof route == null || !route) ? defaultRoute : undefined;
+  }
+}
+
 /**
  * Small piece of documentation of the API, available at '/api'.
  *
@@ -85,14 +93,6 @@ function createApiRoute(apiRoutes: Router, options: INodeAuthOptions) {
   apiRoutes.get("/", (req: Request, res: Response) => {
     res.json(routes);
   });
-}
-
-function getRoute(route: string | boolean, defaultRoute: string) {
-  if (typeof route === "string") {
-    return route;
-  } else {
-    return (typeof route === "undefined" || !route) ? defaultRoute : undefined;
-  }
 }
 
 function createRoutes(secretKey: string, options: INodeAuthOptions) {
