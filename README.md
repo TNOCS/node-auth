@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/TNOCS/node-auth.svg?branch=master)](https://travis-ci.org/TNOCS/node-auth)
 <a href="https://codeclimate.com/github/TNOCS/node-auth"><img src="https://codeclimate.com/github/TNOCS/node-auth/badges/gpa.svg" /></a>
 <a href="https://codeclimate.com/github/TNOCS/node-auth"><img src="https://codeclimate.com/github/TNOCS/node-auth/badges/issue_count.svg" /></a>
 
