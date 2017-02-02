@@ -29,6 +29,13 @@ export function init(options: INodeAuthOptions) {
   confirmationMessageSendCallback = options.verify.confirmationMessageSendCallback;
 }
 
+function sendConfirmationEmail(user: IUser) {
+  if (!confirmMailOptions) { return; }
+  const mailOptions = JSON.parse(JSON.stringify(confirmMailOptions)); // clone
+  mailOptions.to = user.email;
+  mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
+}
+
 /**
  * Verify the user's email address, e.g. /api/users/:id?t=jwt
  * where jwt is a token
@@ -73,6 +80,32 @@ export function verifyEmail(req: Request, res: Response) {
 }
 
 /**
+ * Send a verification message by encrypting the email and adding it as token.
+ *
+ * @export
+ * @param {IUser} user
+ * @param {(err: Error, info: nodemailer.SentMessageInfo) => void} [callback]
+ */
+export function sendVerificationMessage(user: IUser) {
+  if (!verifyMailOptions) { return; }
+  bcrypt.hash(user.email, 10, (err, hash) => {
+    if (err) {
+      error(err);
+      return;
+    }
+    // inject newly-created URL into the email's body and FIRE
+    const URL = `${verificationURL}/${user._id.toString()}?t=${hash}`; // e.g. /api/activate/1234?t=5678
+    const mailOptions = JSON.parse(JSON.stringify(verifyMailOptions)); // clone
+
+    mailOptions.to = user.email;
+    mailOptions.html = mailOptions.html.replace(urlRegex, URL);
+    mailOptions.text = mailOptions.text.replace(urlRegex, URL);
+
+    mailService && mailService.send(mailOptions, verificationMessageSendCallback);
+  });
+}
+
+/**
  * Resend verification email.
  * GET /api/activate?email=[EMAIL]
  *
@@ -98,39 +131,6 @@ export function resendEmail(req: Request, res: Response) {
     }
     sendVerificationMessage(user);
     res.status(HTTPStatusCodes.OK).json({ success: true, message: "Verification email sent." });
-  });
-}
-
-function sendConfirmationEmail(user: IUser) {
-  if (!confirmMailOptions) { return; }
-  const mailOptions = JSON.parse(JSON.stringify(confirmMailOptions)); // clone
-  mailOptions.to = user.email;
-  mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
-}
-
-/**
- * Send a verification message by encrypting the email and adding it as token.
- *
- * @export
- * @param {IUser} user
- * @param {(err: Error, info: nodemailer.SentMessageInfo) => void} [callback]
- */
-export function sendVerificationMessage(user: IUser) {
-  if (!verifyMailOptions) { return; }
-  bcrypt.hash(user.email, 10, (err, hash) => {
-    if (err) {
-      error(err);
-      return;
-    }
-    // inject newly-created URL into the email's body and FIRE
-    const URL = `${verificationURL}/${user._id.toString()}?t=${hash}`; // e.g. /api/activate/1234?t=5678
-    const mailOptions = JSON.parse(JSON.stringify(verifyMailOptions)); // clone
-
-    mailOptions.to = user.email;
-    mailOptions.html = mailOptions.html.replace(urlRegex, URL);
-    mailOptions.text = mailOptions.text.replace(urlRegex, URL);
-
-    mailService && mailService.send(mailOptions, verificationMessageSendCallback);
   });
 }
 

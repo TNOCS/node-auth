@@ -49,6 +49,20 @@ export interface IUserModel extends IUser, mongoose.Document {
   comparePassword: (pwd: string, callback: (err: Error, isMatch: boolean) => void) => void;
 }
 
+// Regex to verify emails: http://emailregex.com/
+const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+/**
+ * Validate the email address usuing a regex
+ * Source: http://emailregex.com/
+ *
+ * @param {string} email
+ * @returns
+ */
+export function validateEmailAddress(email: string) {
+  return emailRegex.test(email);
+}
+
 const UserSchema = new Schema({
   email: {
     type: String,
@@ -126,20 +140,6 @@ UserSchema.methods.comparePassword = function (pwd: string, cb: Function) {
     cb(null, isMatch);
   });
 };
-
-// Regex to verify emails: http://emailregex.com/
-const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
-/**
- * Validate the email address usuing a regex
- * Source: http://emailregex.com/
- *
- * @param {string} email
- * @returns
- */
-export function validateEmailAddress(email: string) {
-  return emailRegex.test(email);
-}
 
 /**
  * The server side User class, with additional Mongoose functionality to save it.

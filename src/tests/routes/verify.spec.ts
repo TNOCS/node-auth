@@ -1,9 +1,9 @@
 process.env.NODE_ENV = "test";
 
-import { User, IUser, IUserModel } from "../../lib/models/user";
 import * as chai from "chai";
-import * as server from "../../example/server";
 import * as bcrypt from "bcrypt";
+import { User, IUser, IUserModel } from "../../lib/models/user";
+import { server } from "../../example/server";
 
 chai.should();
 chai.use(require("chai-http"));

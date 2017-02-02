@@ -166,7 +166,7 @@ export function nodeAuth(app: Application, options: INodeAuthOptions): (req: Req
   const secretKey = options.secretKey;
   if (secretKey === null) { throw new Error("secretKey must be set"); }
 
-  const apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
+  const apiRoute = getRoute(options.api, "/api");
 
   // apply the routes to our application with the prefix /api
   app.use(apiRoute, createRoutes(secretKey, options));

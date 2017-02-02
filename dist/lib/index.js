@@ -117,7 +117,7 @@ function nodeAuth(app, options) {
     if (secretKey === null) {
         throw new Error("secretKey must be set");
     }
-    var apiRoute = (options.api && typeof options.api === "string") ? options.api : "/api";
+    var apiRoute = getRoute(options.api, "/api");
     app.use(apiRoute, createRoutes(secretKey, options));
     return authenticateUser(secretKey, options.blockUnauthenticatedUser);
 }

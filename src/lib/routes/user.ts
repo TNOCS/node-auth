@@ -78,40 +78,35 @@ export function getUser(req: Request, res: Response) {
   });
 }
 
-
 /**
- * Signup unauthenticated users.
- * This differs from the createUser function, as it only allows unauthenticated users to signup.
+ * Simple helper function to get the token.
  *
  * @export
  * @param {Request} req
- * @param {Response} res
+ * @returns
  */
-export function signupUser(req: Request, res: Response) {
-  const token = getToken(req);
-  if (token) {
-    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "You are already signed in. Please logout first."});
-    return;
-  }
-  createNewUser(req, res);
+export function getToken(req: Request) {
+  return req["body"]["token"] || req["query"]["token"] || req.headers["x-access-token"] || req.headers["authorization"];
 }
 
 /**
- * Create a new user: admin users can set the admin property.
+ * Save the user
  *
- * @export
+ * @param {IUserModel} user
  * @param {Request} req
  * @param {Response} res
- * @param {UserChangedEvent} onUserChanged
- * @returns
  */
-export function createUser(req: Request, res: Response) {
-  const adminUser = <IUser> req["user"];
-  if (!adminUser || !adminUser.admin) {
-    res.status(HTTPStatusCodes.METHOD_NOT_ALLOWED).json( { success: false, message: "Regular users cannot create new user. Ask an administrator." });
-    return;
-  }
-  createNewUser(req, res);
+function saveUser(user: IUserModel, req: Request, res: Response) {
+  user.save(err => {
+    if (err) {
+      error(err);
+      return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: "User could not be created." });
+    }
+    // log('User saved successfully');
+    const json = <IUser> user.toJSON();
+    delete json.password;
+    return res.json( { user: json });
+  });
 }
 
 /**
@@ -152,6 +147,41 @@ function createNewUser(req: Request, res: Response) {
   }
 
   saveUser(user, req, res);
+}
+
+/**
+ * Signup unauthenticated users.
+ * This differs from the createUser function, as it only allows unauthenticated users to signup.
+ *
+ * @export
+ * @param {Request} req
+ * @param {Response} res
+ */
+export function signupUser(req: Request, res: Response) {
+  const token = getToken(req);
+  if (token) {
+    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: "You are already signed in. Please logout first."});
+    return;
+  }
+  createNewUser(req, res);
+}
+
+/**
+ * Create a new user: admin users can set the admin property.
+ *
+ * @export
+ * @param {Request} req
+ * @param {Response} res
+ * @param {UserChangedEvent} onUserChanged
+ * @returns
+ */
+export function createUser(req: Request, res: Response) {
+  const adminUser = <IUser> req["user"];
+  if (!adminUser || !adminUser.admin) {
+    res.status(HTTPStatusCodes.METHOD_NOT_ALLOWED).json( { success: false, message: "Regular users cannot create new user. Ask an administrator." });
+    return;
+  }
+  createNewUser(req, res);
 }
 
 /**
@@ -279,35 +309,4 @@ export function updateProfile(req: Request, res: Response) {
 export function deleteProfile(req: Request, res: Response) {
   setUserIdAsParameter(req);
   deleteUser(req, res);
-}
-
-/**
- * Save the user
- *
- * @param {IUserModel} user
- * @param {Request} req
- * @param {Response} res
- */
-function saveUser(user: IUserModel, req: Request, res: Response) {
-  user.save(err => {
-    if (err) {
-      error(err);
-      return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: "User could not be created." });
-    }
-    // log('User saved successfully');
-    const json = <IUser> user.toJSON();
-    delete json.password;
-    return res.json( { user: json });
-  });
-}
-
-/**
- * Simple helper function to get the token.
- *
- * @export
- * @param {Request} req
- * @returns
- */
-export function getToken(req: Request) {
-  return req["body"]["token"] || req["query"]["token"] || req.headers["x-access-token"] || req.headers["authorization"];
 }
