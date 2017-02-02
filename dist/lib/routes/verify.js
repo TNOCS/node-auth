@@ -21,6 +21,14 @@ function init(options) {
     confirmationMessageSendCallback = options.verify.confirmationMessageSendCallback;
 }
 exports.init = init;
+function sendConfirmationEmail(user) {
+    if (!confirmMailOptions) {
+        return;
+    }
+    var mailOptions = JSON.parse(JSON.stringify(confirmMailOptions));
+    mailOptions.to = user.email;
+    mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
+}
 function verifyEmail(req, res) {
     var id = req.params["id"];
     var token = req.query["t"];
@@ -55,6 +63,24 @@ function verifyEmail(req, res) {
     });
 }
 exports.verifyEmail = verifyEmail;
+function sendVerificationMessage(user) {
+    if (!verifyMailOptions) {
+        return;
+    }
+    bcrypt.hash(user.email, 10, function (err, hash) {
+        if (err) {
+            error(err);
+            return;
+        }
+        var URL = verificationURL + "/" + user._id.toString() + "?t=" + hash;
+        var mailOptions = JSON.parse(JSON.stringify(verifyMailOptions));
+        mailOptions.to = user.email;
+        mailOptions.html = mailOptions.html.replace(urlRegex, URL);
+        mailOptions.text = mailOptions.text.replace(urlRegex, URL);
+        mailService && mailService.send(mailOptions, verificationMessageSendCallback);
+    });
+}
+exports.sendVerificationMessage = sendVerificationMessage;
 function resendEmail(req, res) {
     var email = req.query["email"];
     if (!email) {
@@ -75,30 +101,4 @@ function resendEmail(req, res) {
     });
 }
 exports.resendEmail = resendEmail;
-function sendConfirmationEmail(user) {
-    if (!confirmMailOptions) {
-        return;
-    }
-    var mailOptions = JSON.parse(JSON.stringify(confirmMailOptions));
-    mailOptions.to = user.email;
-    mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
-}
-function sendVerificationMessage(user) {
-    if (!verifyMailOptions) {
-        return;
-    }
-    bcrypt.hash(user.email, 10, function (err, hash) {
-        if (err) {
-            error(err);
-            return;
-        }
-        var URL = verificationURL + "/" + user._id.toString() + "?t=" + hash;
-        var mailOptions = JSON.parse(JSON.stringify(verifyMailOptions));
-        mailOptions.to = user.email;
-        mailOptions.html = mailOptions.html.replace(urlRegex, URL);
-        mailOptions.text = mailOptions.text.replace(urlRegex, URL);
-        mailService && mailService.send(mailOptions, verificationMessageSendCallback);
-    });
-}
-exports.sendVerificationMessage = sendVerificationMessage;
 //# sourceMappingURL=verify.js.map

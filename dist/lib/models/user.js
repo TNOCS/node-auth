@@ -5,6 +5,11 @@ var bluebird = require("bluebird");
 mongoose.Promise = bluebird;
 var Schema = mongoose.Schema;
 ;
+var emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+function validateEmailAddress(email) {
+    return emailRegex.test(email);
+}
+exports.validateEmailAddress = validateEmailAddress;
 var UserSchema = new Schema({
     email: {
         type: String,
@@ -82,10 +87,5 @@ UserSchema.methods.comparePassword = function (pwd, cb) {
         cb(null, isMatch);
     });
 };
-var emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-function validateEmailAddress(email) {
-    return emailRegex.test(email);
-}
-exports.validateEmailAddress = validateEmailAddress;
 exports.User = mongoose.model("User", UserSchema);
 //# sourceMappingURL=user.js.map

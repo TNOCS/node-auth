@@ -47,24 +47,21 @@ function getUser(req, res) {
     });
 }
 exports.getUser = getUser;
-function signupUser(req, res) {
-    var token = getToken(req);
-    if (token) {
-        res.status(400).json({ success: false, message: "You are already signed in. Please logout first." });
-        return;
-    }
-    createNewUser(req, res);
+function getToken(req) {
+    return req["body"]["token"] || req["query"]["token"] || req.headers["x-access-token"] || req.headers["authorization"];
 }
-exports.signupUser = signupUser;
-function createUser(req, res) {
-    var adminUser = req["user"];
-    if (!adminUser || !adminUser.admin) {
-        res.status(405).json({ success: false, message: "Regular users cannot create new user. Ask an administrator." });
-        return;
-    }
-    createNewUser(req, res);
+exports.getToken = getToken;
+function saveUser(user, req, res) {
+    user.save(function (err) {
+        if (err) {
+            error(err);
+            return res.status(422).json({ success: false, message: "User could not be created." });
+        }
+        var json = user.toJSON();
+        delete json.password;
+        return res.json({ user: json });
+    });
 }
-exports.createUser = createUser;
 function createNewUser(req, res) {
     var name = req["body"].name;
     var email = req["body"].email;
@@ -98,6 +95,24 @@ function createNewUser(req, res) {
     }
     saveUser(user, req, res);
 }
+function signupUser(req, res) {
+    var token = getToken(req);
+    if (token) {
+        res.status(400).json({ success: false, message: "You are already signed in. Please logout first." });
+        return;
+    }
+    createNewUser(req, res);
+}
+exports.signupUser = signupUser;
+function createUser(req, res) {
+    var adminUser = req["user"];
+    if (!adminUser || !adminUser.admin) {
+        res.status(405).json({ success: false, message: "Regular users cannot create new user. Ask an administrator." });
+        return;
+    }
+    createNewUser(req, res);
+}
+exports.createUser = createUser;
 function updateUser(req, res) {
     var updatedUser = req["body"];
     var id = req.params["id"];
@@ -172,19 +187,4 @@ function deleteProfile(req, res) {
     deleteUser(req, res);
 }
 exports.deleteProfile = deleteProfile;
-function saveUser(user, req, res) {
-    user.save(function (err) {
-        if (err) {
-            error(err);
-            return res.status(422).json({ success: false, message: "User could not be created." });
-        }
-        var json = user.toJSON();
-        delete json.password;
-        return res.json({ user: json });
-    });
-}
-function getToken(req) {
-    return req["body"]["token"] || req["query"]["token"] || req.headers["x-access-token"] || req.headers["authorization"];
-}
-exports.getToken = getToken;
 //# sourceMappingURL=user.js.map
