@@ -22,7 +22,7 @@
         ],
         "quotemark": [
             true,
-            "double"
+            "single"
         ],
         "curly": true,
         "semicolon": [

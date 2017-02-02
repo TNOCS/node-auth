@@ -1,7 +1,7 @@
 "use strict";
-var mongoose = require("mongoose");
-var bcrypt = require("bcrypt");
-var bluebird = require("bluebird");
+var mongoose = require('mongoose');
+var bcrypt = require('bcrypt');
+var bluebird = require('bluebird');
 mongoose.Promise = bluebird;
 var Schema = mongoose.Schema;
 ;
@@ -25,7 +25,7 @@ var UserSchema = new Schema({
                     cb(docs.length === 0);
                 });
             },
-            message: "User already exists!"
+            message: 'User already exists!'
         }
     },
     password: String,
@@ -55,13 +55,13 @@ var UserSchema = new Schema({
 }, {
     versionKey: false
 });
-UserSchema.pre("save", function (next) {
+UserSchema.pre('save', function (next) {
     var now = new Date();
     var user = this;
     if (!user.createdAt) {
         user.createdAt = now;
     }
-    if (user.password && this.isModified("password") || this.isNew) {
+    if (user.password && this.isModified('password') || this.isNew) {
         bcrypt.genSalt(10, function (err, salt) {
             if (err) {
                 return next(err);
@@ -87,5 +87,5 @@ UserSchema.methods.comparePassword = function (pwd, cb) {
         cb(null, isMatch);
     });
 };
-exports.User = mongoose.model("User", UserSchema);
+exports.User = mongoose.model('User', UserSchema);
 //# sourceMappingURL=user.js.map

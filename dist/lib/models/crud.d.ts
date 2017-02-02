@@ -1,1 +1,1 @@
-export declare type CRUD = "create" | "update" | "delete";
+export declare type CRUD = 'create' | 'update' | 'delete';

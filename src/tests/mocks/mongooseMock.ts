@@ -1,5 +1,5 @@
-import * as sinon from "sinon";
-import * as events from "events";
+import * as sinon from 'sinon';
+import * as events from 'events';
 
 const mongoose: any = {};
 module.exports = mongoose;
@@ -26,7 +26,7 @@ const Schema = function () {
     this.save = sinon.stub();
     this.increment = sinon.stub();
     this.remove = sinon.stub();
-    mongoose.emit("document", this);
+    mongoose.emit('document', this);
     return this;
   }
 
@@ -79,7 +79,7 @@ const Schema = function () {
   Model.update = sinon.stub();
   Model.where = sinon.stub();
 
-  mongoose.emit("model", Model);
+  mongoose.emit('model', Model);
   return Model;
 };
 
@@ -104,6 +104,6 @@ function createModelFromSchema(name, Type) {
 }
 
 mongoose.Schema = Schema;
-mongoose.Schema.Types = { ObjectId: "" };  // Defining mongoose types as dummies.
+mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
 mongoose.model = createModelFromSchema;
 mongoose.connect = sinon.stub;

@@ -1,6 +1,6 @@
 "use strict";
-var bcrypt = require("bcrypt");
-var user_1 = require("../models/user");
+var bcrypt = require('bcrypt');
+var user_1 = require('../models/user');
 var error = console.error;
 var urlRegex = /\$\{URL\}/g;
 var verificationURL;
@@ -30,35 +30,35 @@ function sendConfirmationEmail(user) {
     mailService && mailService.send(mailOptions, confirmationMessageSendCallback);
 }
 function verifyEmail(req, res) {
-    var id = req.params["id"];
-    var token = req.query["t"];
+    var id = req.params['id'];
+    var token = req.query['t'];
     if (!id || !token) {
-        res.status(400).json({ success: false, message: "Please create a valid request!" });
+        res.status(400).json({ success: false, message: 'Please create a valid request!' });
         return;
     }
     user_1.User.findById(id, function (err, user) {
         if (err || !user) {
-            res.status(400).json({ success: false, message: "Please create a valid request!" });
+            res.status(400).json({ success: false, message: 'Please create a valid request!' });
             return;
         }
         bcrypt.compare(user.email, token)
             .then(function (ok) {
             if (!ok) {
-                res.status(400).json({ success: false, message: "Please create a valid request!" });
+                res.status(400).json({ success: false, message: 'Please create a valid request!' });
                 return;
             }
             user.update({ verified: true }, function (err, result) {
                 if (err) {
                     error(err);
-                    res.status(500).json({ success: false, message: "Something did not work as expected. Please come back later and try again." });
+                    res.status(500).json({ success: false, message: 'Something did not work as expected. Please come back later and try again.' });
                     return;
                 }
-                res.status(200).json({ success: true, message: "Your email was verified successfully. Thank you!" });
+                res.status(200).json({ success: true, message: 'Your email was verified successfully. Thank you!' });
                 sendConfirmationEmail(user);
             });
         })
             .catch(function (err) {
-            res.status(400).json({ success: false, message: "Please create a valid request!" });
+            res.status(400).json({ success: false, message: 'Please create a valid request!' });
         });
     });
 }
@@ -82,22 +82,22 @@ function sendVerificationMessage(user) {
 }
 exports.sendVerificationMessage = sendVerificationMessage;
 function resendEmail(req, res) {
-    var email = req.query["email"];
+    var email = req.query['email'];
     if (!email) {
-        res.status(400).json({ success: false, message: "Please send your email to activate your account." });
+        res.status(400).json({ success: false, message: 'Please send your email to activate your account.' });
         return;
     }
     user_1.User.findOne({ email: email.toLowerCase() }, function (err, user) {
         if (err || !user) {
-            res.status(400).json({ success: false, message: "Please signup first." });
+            res.status(400).json({ success: false, message: 'Please signup first.' });
             return;
         }
         if (user.verified) {
-            res.status(400).json({ success: false, message: "User is already verified." });
+            res.status(400).json({ success: false, message: 'User is already verified.' });
             return;
         }
         sendVerificationMessage(user);
-        res.status(200).json({ success: true, message: "Verification email sent." });
+        res.status(200).json({ success: true, message: 'Verification email sent.' });
     });
 }
 exports.resendEmail = resendEmail;
