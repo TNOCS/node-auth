@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/TNOCS/node-auth.svg?branch=master)](https://travis-ci.org/TNOCS/node-auth)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/83c457cab2904027a1365e06c48991dd)](https://www.codacy.com/app/erikvullings/node-auth?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=TNOCS/node-auth&amp;utm_campaign=Badge_Grade)
 <a href="https://codeclimate.com/github/TNOCS/node-auth"><img src="https://codeclimate.com/github/TNOCS/node-auth/badges/issue_count.svg" /></a>
 
 # node-auth
