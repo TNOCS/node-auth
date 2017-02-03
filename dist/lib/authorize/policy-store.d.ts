@@ -1,9 +1,8 @@
-import { Subject } from '../models/subject';
 import { Rule } from '../models/rule';
+import { PermissionRequest } from '../models/decision';
 import { PolicySet, PolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { Action } from '../models/action';
-import { Resource } from '../models/resource';
 export interface UsedKeys {
     policyName: string;
     subjectKeys: string[];
@@ -20,12 +19,8 @@ export interface PolicyStore {
     }[];
     getPolicySet(name: string): PolicySetCollection;
     getPolicyRules(policyName: string): Rule[];
-    getRelevantPolicyRules(policy: string, query: {
-        subject?: Subject;
-        action?: Action;
-        resource?: Resource;
-    }): Rule[];
-    addPolicyRule(policyName: string, rule: Rule): any;
+    getRelevantRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
+    getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
     save(callback: (err: Error) => void): any;
 }
 export declare function init(name?: string, policySets?: PolicySet[]): PolicyStore;

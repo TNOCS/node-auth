@@ -91,40 +91,87 @@ describe('The PolicyStore', () => {
   it('should retrieve relevant rules', () => {
     const policySets = policyStore.getPolicySets();
     let policySet = policyStore.getPolicySet(policySets[0].name);
-    let rules = policyStore.getRelevantPolicyRules(policySet.policies[0].name, { subject: { admin: true } });
+    let ruleResolver = policyStore.getRelevantRuleResolver(policySet.policies[0].name);
+    let rules = ruleResolver({ subject: { admin: true } });
     rules.length.should.be.eql(1);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[0].name, { subject: { admin: false } });
+    rules = ruleResolver({ subject: { admin: false } });
     rules.length.should.be.eql(0);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[0].name, { resource: { domain: '*' } });
+    rules = ruleResolver({ resource: { domain: '*' } });
     rules.length.should.be.eql(0);
 
     policySet = policyStore.getPolicySet(policySets[1].name);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { admin: true } });
+    ruleResolver = policyStore.getRelevantRuleResolver(policySet.policies[1].name);
+    rules = ruleResolver({ subject: { admin: true } });
     rules.length.should.be.eql(0);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { _id: '12345' } });
+    rules = ruleResolver({ subject: { _id: '12345' } });
     rules.length.should.be.eql(0);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { _id: '123' } });
+    rules = ruleResolver({ subject: { _id: '123' } });
     rules.length.should.be.eql(1);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { _id: '123' }, resource: { domain: 'articles' } });
+    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'articles' } });
     rules.length.should.be.eql(2);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { _id: '123' }, resource: { domain: 'project123' } });
+    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(2);
-    rules = policyStore.getRelevantPolicyRules(policySet.policies[1].name, { subject: { _id: '12345' }, resource: { domain: 'project123' } });
+    rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(1);
   });
 
-  it('should insert new rules', () => {
+  it('should add new rules', () => {
     const policySets = policyStore.getPolicySets();
     let policySet = policyStore.getPolicySet(policySets[1].name);
     const policyName = policySet.policies[1].name;
-    policyStore.addPolicyRule(policyName, { subject: { _id: '123456' }, decision: Decision.permit });
-    policyStore.addPolicyRule(policyName, { subject: { role: 'moderator' }, decision: Decision.permit });
-    policyStore.addPolicyRule(policyName, { subject: { email: 'john.doe@gmail.com' }, decision: Decision.permit });
-    let rules = policyStore.getRelevantPolicyRules(policyName, { subject: { _id: '123456' } });
+    const policyEditor = policyStore.getPolicyEditor(policyName);
+    const ruleResolver = policyStore.getRelevantRuleResolver(policyName);
+    policyEditor('add', { subject: { _id: '123456' }, decision: Decision.permit });
+    policyEditor('add', { subject: { role: 'moderator' }, decision: Decision.permit });
+    policyEditor('add', { subject: { email: 'john.doe@gmail.com' }, decision: Decision.permit });
+    let rules = ruleResolver({ subject: { _id: '123456' } });
     rules.length.should.be.eql(1);
-    rules = policyStore.getRelevantPolicyRules(policyName, { subject: { role: 'moderator' } });
+    rules = ruleResolver({ subject: { role: 'moderator' } });
     rules.length.should.be.eql(1);
-    rules = policyStore.getRelevantPolicyRules(policyName, { subject: { email: 'john.doe@gmail.com' } });
+    rules = ruleResolver({ subject: { email: 'john.doe@gmail.com' } });
+    rules.length.should.be.eql(1);
+  });
+
+  it('should delete existing rules, i.e. rules from the database', () => {
+    const policySets = policyStore.getPolicySets();
+    let policySet = policyStore.getPolicySet(policySets[1].name);
+    const policyName = policySet.policies[1].name;
+    const policyEditor = policyStore.getPolicyEditor(policyName);
+    const ruleResolver = policyStore.getRelevantRuleResolver(policyName);
+    const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.permit });
+    const rule2 = policyEditor('add', { subject: { role: 'moderator2' }, decision: Decision.permit });
+    const rule3 = policyEditor('add', { subject: { email: 'jane.doe@gmail.com' }, decision: Decision.permit });
+    policyEditor('delete', rule1);
+    policyEditor('delete', rule2);
+    policyEditor('delete', rule3);
+    let rules = ruleResolver({ subject: { _id: '654321' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { role: 'moderator2' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { email: 'jane.doe@gmail.com' } });
+    rules.length.should.be.eql(0);
+  });
+
+  it('should update existing rules, i.e. rules from the database', () => {
+    const policySets = policyStore.getPolicySets();
+    let policySet = policyStore.getPolicySet(policySets[1].name);
+    const policyName = policySet.policies[1].name;
+    const policyEditor = policyStore.getPolicyEditor(policyName);
+    const ruleResolver = policyStore.getRelevantRuleResolver(policyName);
+    const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.permit });
+    rule1.subject._id = '123';
+    const rule2 = policyEditor('add', { subject: { role: 'moderator2' }, decision: Decision.permit });
+    rule2.resource = { domain: 'hello' };
+    const rule3 = policyEditor('add', { subject: { email: 'jane.doe@gmail.com' }, decision: Decision.permit });
+    rule3.subject.admin = true;
+    policyEditor('update', rule1);
+    policyEditor('update', rule2);
+    policyEditor('update', rule3);
+    let rules = ruleResolver({ subject: { _id: '654321' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { role: 'moderator2' } });
+    rules.length.should.be.eql(1);
+    rules = ruleResolver({ subject: { email: 'jane.doe@gmail.com' } });
     rules.length.should.be.eql(1);
   });
 

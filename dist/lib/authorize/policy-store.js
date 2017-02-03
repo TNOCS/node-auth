@@ -29,19 +29,24 @@ function loadPolicySets(db, policySets) {
     });
 }
 function updateUsedKeys(usedKeys, rule) {
+    var changed = false;
     rule.subject && Object.keys(rule.subject).forEach(function (k) {
         if (usedKeys.subjectKeys.indexOf(k) < 0) {
             usedKeys.subjectKeys.push(k);
+            changed = true;
         }
     });
     if (rule.action) {
         usedKeys.action |= rule.action;
+        changed = true;
     }
     rule.resource && Object.keys(rule.resource).forEach(function (k) {
         if (usedKeys.resourceKeys.indexOf(k) < 0) {
             usedKeys.resourceKeys.push(k);
+            changed = true;
         }
     });
+    return changed;
 }
 function createSummary(db) {
     var summary = db.addCollection('summaries');
@@ -87,36 +92,50 @@ function init(name, policySets) {
         getPolicyRules: function (policyName) {
             return db.getCollection(policyName).find();
         },
-        getRelevantPolicyRules: function (policyName, req) {
+        getRelevantRuleResolver: function (policyName) {
             var ruleCollection = db.getCollection(policyName);
-            var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-            var relevantRules = [];
-            req.subject && usedKeys.subjectKeys.forEach(function (k) {
-                if (req.subject.hasOwnProperty(k)) {
-                    ruleCollection
-                        .chain()
-                        .where(function (r) { return r.subject[k] === req.subject[k]; })
-                        .data()
-                        .forEach(function (r) { relevantRules.push(r); });
-                }
-            });
-            req.resource && usedKeys.resourceKeys.forEach(function (k) {
-                if (req.resource.hasOwnProperty(k)) {
-                    ruleCollection
-                        .chain()
-                        .where(function (r) { return r.resource[k] === req.resource[k]; })
-                        .data()
-                        .forEach(function (r) { relevantRules.push(r); });
-                }
-            });
-            return relevantRules;
+            return function (req) {
+                var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
+                var relevantRules = [];
+                req.subject && usedKeys.subjectKeys.forEach(function (k) {
+                    if (req.subject.hasOwnProperty(k)) {
+                        ruleCollection
+                            .chain()
+                            .where(function (r) { return r.subject[k] === req.subject[k]; })
+                            .data()
+                            .forEach(function (r) { relevantRules.push(r); });
+                    }
+                });
+                req.resource && usedKeys.resourceKeys.forEach(function (k) {
+                    if (req.resource.hasOwnProperty(k)) {
+                        ruleCollection
+                            .chain()
+                            .where(function (r) { return r.resource[k] === req.resource[k]; })
+                            .data()
+                            .forEach(function (r) { relevantRules.push(r); });
+                    }
+                });
+                return relevantRules;
+            };
         },
-        addPolicyRule: function (policyName, rule) {
+        getPolicyEditor: function (policyName) {
             var ruleCollection = db.getCollection(policyName);
-            var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-            updateUsedKeys(usedKeys, rule);
-            usedKeyCollection.update(usedKeys);
-            ruleCollection.insert(rule);
+            return function (change, rule) {
+                switch (change) {
+                    case 'add':
+                        var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
+                        if (updateUsedKeys(usedKeys, rule)) {
+                            usedKeyCollection.update(usedKeys);
+                        }
+                        return ruleCollection.insert(rule);
+                    case 'update':
+                        return ruleCollection.update(rule);
+                    case 'delete':
+                        return ruleCollection.remove(rule);
+                    default:
+                        throw new Error('Unknown change.');
+                }
+            };
         },
         save: function (done) {
             db.save(done);
