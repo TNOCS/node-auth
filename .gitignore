@@ -42,3 +42,4 @@ typings
 dist/example
 dist/tests
 dist/lib/**/*.map
+test-policies.json
