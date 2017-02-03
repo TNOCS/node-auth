@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
-import { User, IUser, IUserModel } from "../models/user";
-import { CRUD } from "../models/crud";
-import { INodeAuthOptions } from "../models/options";
-import * as jwt from "jsonwebtoken";
+import { Request, Response } from 'express';
+import { User, IUser, IUserModel } from '../models/user';
+import { CRUD } from '../models/crud';
+import { INodeAuthOptions } from '../models/options';
+import * as jwt from 'jsonwebtoken';
 
 // export type CRUD = 'create' | 'update' | 'delete';
 export type UserChangedEvent = (user: IUser, req: Request, change: CRUD) => IUser | void;

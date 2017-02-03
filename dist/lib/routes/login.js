@@ -1,6 +1,6 @@
 "use strict";
-var user_1 = require("../models/user");
-var jwt = require("jsonwebtoken");
+var user_1 = require('../models/user');
+var jwt = require('jsonwebtoken');
 var expiresIn;
 var secretKey;
 function init(options) {
