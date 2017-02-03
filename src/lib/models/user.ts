@@ -14,8 +14,8 @@ const Schema = mongoose.Schema;
  */
 export interface IUser {
   _id: mongoose.Types.ObjectId;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   /** first name */
   first?: string;
   /** Display name or last name */
@@ -29,7 +29,9 @@ export interface IUser {
   /** When does the subscription expire */
   expires?: Date;
   /** Timestamp the account was created */
-  createdAt: Date;
+  createdAt?: Date;
+  /** Role the user has */
+  role?: string;
   /**
    * Data object, to store application specific user data.
    * Typically, a developer would extend the IUser interface to specify the data properties in IMyAppUser.
