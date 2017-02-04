@@ -3,8 +3,8 @@ import { Action } from './action';
 import { Resource } from './resource';
 
 export enum Decision {
-  permit,
-  deny
+  Deny,
+  Permit
 }
 
 export interface PermissionRequest {
@@ -13,8 +13,8 @@ export interface PermissionRequest {
   resource?: Resource;
 }
 
-export interface PolicyDecision {
-  (req: PermissionRequest): Decision;
-  // get the rights of a subject
-  // get the rules associated with a resource.
-}
+// export interface PolicyDecision {
+//   (req: PermissionRequest): Decision;
+//   // get the rights of a subject
+//   // get the rules associated with a resource.
+// }

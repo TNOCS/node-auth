@@ -37,7 +37,7 @@ export interface PolicyStore {
   /** Return all policy rules */
   getPolicyRules(policyName: string): Rule[];
   /** Return rule resolver for a certain policy. It returns a function that can be used to retreive relevant rules for the current context. */
-  getRelevantRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
+  getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
   getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
   /** Save the database */
@@ -176,7 +176,7 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
     getPolicyRules(policyName: string) {
       return db.getCollection<Rule>(policyName).find();
     },
-    getRelevantRuleResolver(policyName: string) {
+    getRuleResolver(policyName: string) {
       const ruleCollection = db.getCollection<Rule>(policyName);
       return (req: PermissionRequest) => {
         const usedKeys = usedKeyCollection.findOne({ policyName: policyName });
@@ -187,7 +187,11 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
               .chain()
               .where(r => { return r.subject[k] === req.subject[k]; })
               .data()
-              .forEach(r => { relevantRules.push(r); });
+              .forEach(r => {
+                if (relevantRules.indexOf(r) < 0) {
+                  relevantRules.push(r);
+                }
+              });
           }
         });
         req.resource && usedKeys.resourceKeys.forEach(k => {
@@ -196,7 +200,11 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
               .chain()
               .where(r => { return r.resource[k] === req.resource[k]; })
               .data()
-              .forEach(r => { relevantRules.push(r); });
+              .forEach(r => {
+                if (relevantRules.indexOf(r) < 0) {
+                  relevantRules.push(r);
+                }
+              });
           }
         });
         return relevantRules;

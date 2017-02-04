@@ -92,7 +92,7 @@ function init(name, policySets) {
         getPolicyRules: function (policyName) {
             return db.getCollection(policyName).find();
         },
-        getRelevantRuleResolver: function (policyName) {
+        getRuleResolver: function (policyName) {
             var ruleCollection = db.getCollection(policyName);
             return function (req) {
                 var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
@@ -103,7 +103,11 @@ function init(name, policySets) {
                             .chain()
                             .where(function (r) { return r.subject[k] === req.subject[k]; })
                             .data()
-                            .forEach(function (r) { relevantRules.push(r); });
+                            .forEach(function (r) {
+                            if (relevantRules.indexOf(r) < 0) {
+                                relevantRules.push(r);
+                            }
+                        });
                     }
                 });
                 req.resource && usedKeys.resourceKeys.forEach(function (k) {
@@ -112,7 +116,11 @@ function init(name, policySets) {
                             .chain()
                             .where(function (r) { return r.resource[k] === req.resource[k]; })
                             .data()
-                            .forEach(function (r) { relevantRules.push(r); });
+                            .forEach(function (r) {
+                            if (relevantRules.indexOf(r) < 0) {
+                                relevantRules.push(r);
+                            }
+                        });
                     }
                 });
                 return relevantRules;

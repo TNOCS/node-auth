@@ -1,7 +1,7 @@
 "use strict";
 (function (Decision) {
-    Decision[Decision["permit"] = 0] = "permit";
-    Decision[Decision["deny"] = 1] = "deny";
+    Decision[Decision["Deny"] = 0] = "Deny";
+    Decision[Decision["Permit"] = 1] = "Permit";
 })(exports.Decision || (exports.Decision = {}));
 var Decision = exports.Decision;
 //# sourceMappingURL=decision.js.map
