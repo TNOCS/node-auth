@@ -1,6 +1,5 @@
 "use strict";
 var lokijs = require('lokijs');
-var action_1 = require('../models/action');
 function sanatize(name) {
     return name.replace(/ /g, '_');
 }
@@ -28,50 +27,14 @@ function loadPolicySets(db, policySets) {
         loadPolicySet(db, psCol, ps);
     });
 }
-function updateUsedKeys(usedKeys, rule) {
-    var changed = false;
-    rule.subject && Object.keys(rule.subject).forEach(function (k) {
-        if (usedKeys.subjectKeys.indexOf(k) < 0) {
-            usedKeys.subjectKeys.push(k);
-            changed = true;
-        }
-    });
-    if (rule.action) {
-        usedKeys.action |= rule.action;
-        changed = true;
-    }
-    rule.resource && Object.keys(rule.resource).forEach(function (k) {
-        if (usedKeys.resourceKeys.indexOf(k) < 0) {
-            usedKeys.resourceKeys.push(k);
-            changed = true;
-        }
-    });
-    return changed;
-}
-function createSummary(db) {
-    var summary = db.addCollection('summaries');
-    var psCollection = db.getCollection('policy-sets').find();
-    psCollection.forEach(function (ps) {
-        ps.policies.forEach(function (p) {
-            var rules = db.getCollection(p.name).find();
-            var usedKeys = {
-                policyName: p.name,
-                subjectKeys: [],
-                action: action_1.Action.none,
-                resourceKeys: []
-            };
-            rules.forEach(function (r) {
-                updateUsedKeys(usedKeys, r);
-            });
-            summary.insert(usedKeys);
-        });
-    });
-}
 function isRuleRelevant(rule, req) {
     if (req.action && rule.action && !(req.action & rule.action)) {
         return false;
     }
-    if (rule.subject && req.subject) {
+    if (rule.subject) {
+        if (!req.subject) {
+            return false;
+        }
         for (var key in rule.subject) {
             if (!rule.subject.hasOwnProperty(key)) {
                 continue;
@@ -81,7 +44,10 @@ function isRuleRelevant(rule, req) {
             }
         }
     }
-    if (rule.resource && req.resource) {
+    if (rule.resource) {
+        if (!req.resource) {
+            return false;
+        }
         for (var key in rule.resource) {
             if (!rule.resource.hasOwnProperty(key)) {
                 continue;
@@ -98,10 +64,8 @@ function init(name, policySets) {
     var db = new lokijs(name);
     if (policySets) {
         loadPolicySets(db, policySets);
-        createSummary(db);
     }
     var psCollection = db.getCollection('policy-sets');
-    var usedKeyCollection = db.getCollection('summaries');
     return {
         getPolicySets: function () {
             var policySets = psCollection.find();
@@ -121,35 +85,10 @@ function init(name, policySets) {
         getRuleResolver: function (policyName) {
             var ruleCollection = db.getCollection(policyName);
             return function (req) {
-                var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-                var relevantRules = [];
-                req.subject && usedKeys.subjectKeys.forEach(function (k) {
-                    if (req.subject.hasOwnProperty(k)) {
-                        ruleCollection
-                            .chain()
-                            .where(function (r) { return r.subject[k] === req.subject[k]; })
-                            .data()
-                            .forEach(function (r) {
-                            if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
-                                relevantRules.push(r);
-                            }
-                        });
-                    }
-                });
-                req.resource && usedKeys.resourceKeys.forEach(function (k) {
-                    if (req.resource.hasOwnProperty(k)) {
-                        ruleCollection
-                            .chain()
-                            .where(function (r) { return r.resource[k] === req.resource[k]; })
-                            .data()
-                            .forEach(function (r) {
-                            if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
-                                relevantRules.push(r);
-                            }
-                        });
-                    }
-                });
-                return relevantRules;
+                return ruleCollection
+                    .chain()
+                    .where(function (r) { return isRuleRelevant(r, req); })
+                    .data();
             };
         },
         getPolicyEditor: function (policyName) {
@@ -157,10 +96,6 @@ function init(name, policySets) {
             return function (change, rule) {
                 switch (change) {
                     case 'add':
-                        var usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-                        if (updateUsedKeys(usedKeys, rule)) {
-                            usedKeyCollection.update(usedKeys);
-                        }
                         return ruleCollection.insert(rule);
                     case 'update':
                         return ruleCollection.update(rule);

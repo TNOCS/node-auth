@@ -100,59 +100,6 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
 }
 
 /**
- * Get all the unique keys that are used to specify the rules.
- *
- * @param {UsedKeys} usedKeys
- * @param {Rule} rule
- * @returns true if changed
- */
-function updateUsedKeys(usedKeys: UsedKeys, rule: Rule) {
-  let changed = false;
-  rule.subject && Object.keys(rule.subject).forEach(k => {
-    if (usedKeys.subjectKeys.indexOf(k) < 0) {
-      usedKeys.subjectKeys.push(k);
-      changed = true;
-    }
-  });
-  if (rule.action) {
-    usedKeys.action |= rule.action;
-    changed = true;
-  }
-  rule.resource && Object.keys(rule.resource).forEach(k => {
-    if (usedKeys.resourceKeys.indexOf(k) < 0) {
-      usedKeys.resourceKeys.push(k);
-      changed = true;
-    }
-  });
-  return changed;
-}
-
-/**
- * Create a summary for each policy of all the used subject and resource keys.
- *
- * @param {Loki} db
- */
-function createSummary(db: Loki) {
-  const summary = db.addCollection<UsedKeys>('summaries');
-  const psCollection = db.getCollection<PolicySetCollection>('policy-sets').find();
-  psCollection.forEach(ps => {
-    ps.policies.forEach(p => {
-      const rules = db.getCollection<Rule>(p.name).find();
-      const usedKeys = <UsedKeys>{
-        policyName: p.name,
-        subjectKeys: [],
-        action: Action.none,
-        resourceKeys: []
-      };
-      rules.forEach(r => {
-        updateUsedKeys(usedKeys, r);
-      });
-      summary.insert(usedKeys);
-    });
-  });
-}
-
-/**
  * Checks if the rule is relevant with respect to the current request.
  *
  * @param {Rule} rule
@@ -161,13 +108,15 @@ function createSummary(db: Loki) {
  */
 function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
   if (req.action && rule.action && !(req.action & rule.action)) { return false; } // action does not match
-  if (rule.subject && req.subject) {
+  if (rule.subject) {
+    if (!req.subject) { return false; }
     for (const key in rule.subject) {
       if (!rule.subject.hasOwnProperty(key)) { continue; }
       if (!req.subject.hasOwnProperty(key) || rule.subject[key] !== req.subject[key]) { return false; }
     }
   }
-  if (rule.resource && req.resource) {
+  if (rule.resource) {
+    if (!req.resource) { return false; }
     for (const key in rule.resource) {
       if (!rule.resource.hasOwnProperty(key)) { continue; }
       if (!req.resource.hasOwnProperty(key) || rule.resource[key] !== req.resource[key]) { return false; }
@@ -180,10 +129,8 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
   const db = new lokijs(name);
   if (policySets) {
     loadPolicySets(db, policySets);
-    createSummary(db);
   }
   const psCollection = db.getCollection<PolicySetCollection>('policy-sets');
-  const usedKeyCollection = db.getCollection<UsedKeys>('summaries');
   return {
     getPolicySets() {
       const policySets = psCollection.find();
@@ -203,35 +150,10 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
     getRuleResolver(policyName: string) {
       const ruleCollection = db.getCollection<Rule>(policyName);
       return (req: PermissionRequest) => {
-        const usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-        const relevantRules: Rule[] = [];
-        req.subject && usedKeys.subjectKeys.forEach(k => {
-          if (req.subject.hasOwnProperty(k)) {
-            ruleCollection
-              .chain()
-              .where(r => { return r.subject[k] === req.subject[k]; })
-              .data()
-              .forEach(r => {
-                if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
-                  relevantRules.push(r);
-                }
-              });
-          }
-        });
-        req.resource && usedKeys.resourceKeys.forEach(k => {
-          if (req.resource.hasOwnProperty(k)) {
-            ruleCollection
-              .chain()
-              .where(r => { return r.resource[k] === req.resource[k]; })
-              .data()
-              .forEach(r => {
-                if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
-                  relevantRules.push(r);
-                }
-              });
-          }
-        });
-        return relevantRules;
+        return ruleCollection
+          .chain()
+          .where(r => isRuleRelevant(r, req))
+          .data();
       };
     },
     getPolicyEditor(policyName: string) {
@@ -239,10 +161,6 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
       return (change: 'add' | 'update' | 'delete', rule: Rule) => {
         switch (change) {
           case 'add':
-            const usedKeys = usedKeyCollection.findOne({ policyName: policyName });
-            if (updateUsedKeys(usedKeys, rule)) {
-              usedKeyCollection.update(usedKeys);
-            }
             return ruleCollection.insert(rule);
           case 'update':
             return ruleCollection.update(rule);

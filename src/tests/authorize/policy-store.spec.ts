@@ -106,6 +106,8 @@ describe('The PolicyStore', () => {
     rules = ruleResolver({ subject: { _id: '12345' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '123' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { _id: '123' }, resource: { editors: '123' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'articles' } });
     rules.length.should.be.eql(0);
@@ -114,7 +116,7 @@ describe('The PolicyStore', () => {
     rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '456' } });
-    rules.length.should.be.eql(1);
+    rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '456' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '456' }, action: Action.update, resource: { domain: 'project123' } });
@@ -177,10 +179,12 @@ describe('The PolicyStore', () => {
     policyEditor('update', rule3);
     let rules = ruleResolver({ subject: { _id: '654321' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { role: 'moderator2' } });
+    rules = ruleResolver({ subject: { role: 'moderator2' }, resource: { domain: 'hello' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { email: 'janet.doe@gmail.com' } });
     rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { email: 'janet.doe@gmail.com', admin: true } });
+    rules.length.should.be.eql(1);
   });
 
   it('should persist itself to disk', done => {
