@@ -67,6 +67,32 @@ function createSummary(db) {
         });
     });
 }
+function isRuleRelevant(rule, req) {
+    if (req.action && rule.action && !(req.action & rule.action)) {
+        return false;
+    }
+    if (rule.subject && req.subject) {
+        for (var key in rule.subject) {
+            if (!rule.subject.hasOwnProperty(key)) {
+                continue;
+            }
+            if (!req.subject.hasOwnProperty(key) || rule.subject[key] !== req.subject[key]) {
+                return false;
+            }
+        }
+    }
+    if (rule.resource && req.resource) {
+        for (var key in rule.resource) {
+            if (!rule.resource.hasOwnProperty(key)) {
+                continue;
+            }
+            if (!req.resource.hasOwnProperty(key) || rule.resource[key] !== req.resource[key]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 function init(name, policySets) {
     if (name === void 0) { name = 'policies'; }
     var db = new lokijs(name);
@@ -104,7 +130,7 @@ function init(name, policySets) {
                             .where(function (r) { return r.subject[k] === req.subject[k]; })
                             .data()
                             .forEach(function (r) {
-                            if (relevantRules.indexOf(r) < 0) {
+                            if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
                                 relevantRules.push(r);
                             }
                         });
@@ -117,7 +143,7 @@ function init(name, policySets) {
                             .where(function (r) { return r.resource[k] === req.resource[k]; })
                             .data()
                             .forEach(function (r) {
-                            if (relevantRules.indexOf(r) < 0) {
+                            if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
                                 relevantRules.push(r);
                             }
                         });

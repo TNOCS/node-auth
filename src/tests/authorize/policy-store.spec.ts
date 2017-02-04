@@ -49,7 +49,7 @@ describe('The PolicyStore', () => {
           action: Action.manage,
           decision: Decision.Permit,
           resource: {
-            editors: ['123']
+            editors: '123'
           }
         }, {
           subject: { _id: '456' },
@@ -108,17 +108,19 @@ describe('The PolicyStore', () => {
     rules = ruleResolver({ subject: { _id: '123' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'articles' } });
-    rules.length.should.be.eql(2);
+    rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'project123' } });
-    rules.length.should.be.eql(2);
+    rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: 'project123' } });
-    rules.length.should.be.eql(1);
+    rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '456' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '456' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '456' }, action: Action.update, resource: { domain: 'project123' } });
     rules.length.should.be.eql(1);
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.delete, resource: { domain: 'project123' } });
+    rules.length.should.be.eql(0);
   });
 
   it('should add new rules', () => {
@@ -168,7 +170,7 @@ describe('The PolicyStore', () => {
     rule1.subject._id = '123';
     const rule2 = policyEditor('add', { subject: { role: 'moderator2' }, decision: Decision.Permit });
     rule2.resource = { domain: 'hello' };
-    const rule3 = policyEditor('add', { subject: { email: 'jane.doe@gmail.com' }, decision: Decision.Permit });
+    const rule3 = policyEditor('add', { subject: { email: 'janet.doe@gmail.com' }, decision: Decision.Permit });
     rule3.subject.admin = true;
     policyEditor('update', rule1);
     policyEditor('update', rule2);
@@ -177,8 +179,8 @@ describe('The PolicyStore', () => {
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { role: 'moderator2' } });
     rules.length.should.be.eql(1);
-    rules = ruleResolver({ subject: { email: 'jane.doe@gmail.com' } });
-    rules.length.should.be.eql(1);
+    rules = ruleResolver({ subject: { email: 'janet.doe@gmail.com' } });
+    rules.length.should.be.eql(0);
   });
 
   it('should persist itself to disk', done => {

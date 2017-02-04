@@ -152,6 +152,30 @@ function createSummary(db: Loki) {
   });
 }
 
+/**
+ * Checks if the rule is relevant with respect to the current request.
+ *
+ * @param {Rule} rule
+ * @param {PermissionRequest} req
+ * @returns {boolean}
+ */
+function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
+  if (req.action && rule.action && !(req.action & rule.action)) { return false; } // action does not match
+  if (rule.subject && req.subject) {
+    for (const key in rule.subject) {
+      if (!rule.subject.hasOwnProperty(key)) { continue; }
+      if (!req.subject.hasOwnProperty(key) || rule.subject[key] !== req.subject[key]) { return false; }
+    }
+  }
+  if (rule.resource && req.resource) {
+    for (const key in rule.resource) {
+      if (!rule.resource.hasOwnProperty(key)) { continue; }
+      if (!req.resource.hasOwnProperty(key) || rule.resource[key] !== req.resource[key]) { return false; }
+    }
+  }
+  return true;
+}
+
 export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
   const db = new lokijs(name);
   if (policySets) {
@@ -188,7 +212,7 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
               .where(r => { return r.subject[k] === req.subject[k]; })
               .data()
               .forEach(r => {
-                if (relevantRules.indexOf(r) < 0) {
+                if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
                   relevantRules.push(r);
                 }
               });
@@ -201,7 +225,7 @@ export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
               .where(r => { return r.resource[k] === req.resource[k]; })
               .data()
               .forEach(r => {
-                if (relevantRules.indexOf(r) < 0) {
+                if (relevantRules.indexOf(r) < 0 && isRuleRelevant(r, req)) {
                   relevantRules.push(r);
                 }
               });

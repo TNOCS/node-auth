@@ -1,11 +1,7 @@
-// import { PolicySet } from '../models/policy';
 import { Decision } from '../models/decision';
 import { Rule } from '../models/rule';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { PolicyStore } from '../../lib/authorize/policy-store';
-// import { Subject } from '../models/subject';
-// import { Action } from '../models/action';
-// import { Resource } from '../models/resource';
 import { PermissionRequest } from '../models/decision';
 
 let _policyStore: PolicyStore;
