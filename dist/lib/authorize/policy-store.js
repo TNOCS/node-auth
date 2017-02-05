@@ -1,5 +1,6 @@
 "use strict";
 var lokijs = require('lokijs');
+var action_1 = require('../models/action');
 function sanatize(name) {
     return name.replace(/ /g, '_');
 }
@@ -29,7 +30,7 @@ function loadPolicySets(db, policySets) {
 }
 function isRuleRelevant(rule, req) {
     if (rule.action) {
-        if (!req.action || !(req.action & rule.action)) {
+        if (!req.action || !((req.action & rule.action) === req.action)) {
             return false;
         }
     }
@@ -91,6 +92,22 @@ function initPolicyStore(name, policySets) {
                     .chain()
                     .where(function (r) { return isRuleRelevant(r, req); })
                     .data();
+            };
+        },
+        getPrivilegesResolver: function (policySetName) {
+            var policySet = psCollection.findOne({ name: policySetName });
+            return function (req) {
+                var privileges = action_1.Action.None;
+                policySet.policies.some(function (p) {
+                    var ruleCollection = db.getCollection(p.name);
+                    privileges = ruleCollection
+                        .chain()
+                        .where(function (r) { return isRuleRelevant(r, { subject: req.subject, resource: req.resource, action: r.action }); })
+                        .data()
+                        .reduce(function (old, cur) { return old | cur.action; }, privileges);
+                    return (privileges & action_1.Action.All) === action_1.Action.All;
+                });
+                return privileges;
             };
         },
         getPolicyEditor: function (policyName) {

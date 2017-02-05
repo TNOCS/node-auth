@@ -20,6 +20,7 @@ export interface PolicyStore {
     getPolicySet(name: string): PolicySetCollection;
     getPolicyRules(policyName: string): Rule[];
     getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
+    getPrivilegesResolver(policyName: string): (permissionRequest: PermissionRequest) => Action;
     getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
     save(callback: (err: Error) => void): any;
 }

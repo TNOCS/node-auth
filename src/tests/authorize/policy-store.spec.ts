@@ -133,7 +133,7 @@ describe('The PolicyStore', () => {
     rules = ruleResolver({ subject: { _id: '456' }, action: Action.Delete, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '456' }, action: Action.Manage, resource: { domain: 'project123' } });
-    rules.length.should.be.eql(1); // NOTE: we ask for more privileges than we are allowed to have, e.g. Action.Manage > Action.Update.
+    rules.length.should.be.eql(0); // NOTE: we ask for more privileges than we are allowed to have, e.g. Action.Manage > Action.Update, so do not permit it.
   });
 
   it('should add new rules', () => {
@@ -175,7 +175,7 @@ describe('The PolicyStore', () => {
 
   it('should update existing rules, i.e. rules from the database', () => {
     const policySets = policyStore.getPolicySets();
-    let policySet = policyStore.getPolicySet(policySets[1].name);
+    const policySet = policyStore.getPolicySet(policySets[1].name);
     const policyName = policySet.policies[1].name;
     const policyEditor = policyStore.getPolicyEditor(policyName);
     const ruleResolver = policyStore.getRuleResolver(policyName);
@@ -196,6 +196,21 @@ describe('The PolicyStore', () => {
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { email: 'janet.doe@gmail.com', admin: true } });
     rules.length.should.be.eql(1);
+  });
+
+  it('should retrieve a subject\'s privileges', () => {
+    const policySets = policyStore.getPolicySets();
+    const privilegesResolver = policyStore.getPrivilegesResolver(policySets[1].name);
+    let actions = privilegesResolver({ subject: { role: 'editor' }, resource: { domain: 'articles'} });
+    ((actions & Action.Update) === Action.Update).should.be.true;
+    actions = privilegesResolver({ subject: { admin: true }, resource: { domain: 'articles'} });
+    ((actions & Action.Update) === Action.Update).should.be.true;
+    actions = privilegesResolver({ subject: { _id: '123', role: 'editor' }, resource: { domain: 'articles', editors: '123' } });
+    ((actions & Action.Manage) === Action.Manage).should.be.true;
+  });
+
+  it('should match array properties', () => {
+
   });
 
   it('should persist itself to disk', done => {

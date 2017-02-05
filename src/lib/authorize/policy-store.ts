@@ -36,8 +36,10 @@ export interface PolicyStore {
   getPolicySet(name: string): PolicySetCollection;
   /** Return all policy rules */
   getPolicyRules(policyName: string): Rule[];
-  /** Return rule resolver for a certain policy. It returns a function that can be used to retreive relevant rules for the current context. */
+  /** Returns a function that can be used to retreive relevant rules for the current context. */
   getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
+  /** Returns a function that can be used to retreive a subject's privileges with respect to a certain context. Request action is ignored. */
+  getPrivilegesResolver(policyName: string): (permissionRequest: PermissionRequest) => Action;
   /** Return a policy editor,which allows you to add, update and delete rules */
   getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
   /** Save the database */
@@ -113,7 +115,7 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
  */
 function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
   if (rule.action) {
-    if (!req.action || !(req.action & rule.action)) { return false; }
+    if (!req.action || !((req.action & rule.action) === req.action)) { return false; }
   }
   if (rule.subject) {
     if (!req.subject) { return false; }
@@ -161,6 +163,22 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
           .chain()
           .where(r => isRuleRelevant(r, req))
           .data();
+      };
+    },
+    getPrivilegesResolver(policySetName: string) {
+      const policySet = psCollection.findOne({ name: policySetName });
+      return (req: PermissionRequest) => {
+        let privileges: Action = Action.None;
+        policySet.policies.some(p => {
+          const ruleCollection = db.getCollection<Rule>(p.name);
+          privileges = ruleCollection
+            .chain()
+            .where(r => isRuleRelevant(r, { subject: req.subject, resource: req.resource, action: r.action })) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
+            .data()
+            .reduce((old, cur) => { return old | cur.action; }, privileges);
+          return (privileges & Action.All) === Action.All;
+        });
+        return privileges;
       };
     },
     getPolicyEditor(policyName: string) {
