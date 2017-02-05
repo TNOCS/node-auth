@@ -28,7 +28,7 @@ const Schema = function () {
     this.remove = sinon.stub();
     mongoose.emit('document', this);
     return this;
-  }
+  };
 
   Model.statics = {};
   Model.methods = {};
