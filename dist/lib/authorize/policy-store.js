@@ -28,8 +28,10 @@ function loadPolicySets(db, policySets) {
     });
 }
 function isRuleRelevant(rule, req) {
-    if (req.action && rule.action && !(req.action & rule.action)) {
-        return false;
+    if (rule.action) {
+        if (!req.action || !(req.action & rule.action)) {
+            return false;
+        }
     }
     if (rule.subject) {
         if (!req.subject) {
@@ -59,7 +61,7 @@ function isRuleRelevant(rule, req) {
     }
     return true;
 }
-function init(name, policySets) {
+function initPolicyStore(name, policySets) {
     if (name === void 0) { name = 'policies'; }
     var db = new lokijs(name);
     if (policySets) {
@@ -111,5 +113,5 @@ function init(name, policySets) {
         }
     };
 }
-exports.init = init;
+exports.initPolicyStore = initPolicyStore;
 //# sourceMappingURL=policy-store.js.map

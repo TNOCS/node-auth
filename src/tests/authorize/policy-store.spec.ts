@@ -2,17 +2,17 @@ process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import * as PolicyStore from '../../lib/authorize/policy-store';
+import { PolicyStore, initPolicyStore } from '../../lib/authorize/policy-store';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
 
 chai.should();
 
 describe('The PolicyStore', () => {
-  let policyStore: PolicyStore.PolicyStore;
+  let policyStore: PolicyStore;
 
   before(() => {
-    policyStore = PolicyStore.init('test-policies.json', [{
+    policyStore = initPolicyStore('test-policies.json', [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{
@@ -31,7 +31,7 @@ describe('The PolicyStore', () => {
         combinator: 'first',
         rules: [{
           subject: { admin: true },
-          action: Action.all,
+          action: Action.All,
           decision: Decision.Permit
         }]
       }, {
@@ -39,21 +39,21 @@ describe('The PolicyStore', () => {
         combinator: 'first',
         rules: [{
           subject: { role: 'editor' },
-          action: Action.update,
+          action: Action.Update,
           decision: Decision.Permit,
           resource: {
             domain: 'articles'
           }
         }, {
           subject: { _id: '123' },
-          action: Action.manage,
+          action: Action.Manage,
           decision: Decision.Permit,
           resource: {
             editors: '123'
           }
         }, {
           subject: { _id: '456' },
-          action: Action.update,
+          action: Action.Update,
           decision: Decision.Permit,
           resource: {
             domain: 'project123'
@@ -108,6 +108,8 @@ describe('The PolicyStore', () => {
     rules = ruleResolver({ subject: { _id: '123' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '123' }, resource: { editors: '123' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { _id: '123' }, action: Action.Create, resource: { editors: '123' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'articles' } });
     rules.length.should.be.eql(0);
@@ -115,14 +117,23 @@ describe('The PolicyStore', () => {
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
+  });
+
+  it('should get partial action matches', () => {
+    const policySets = policyStore.getPolicySets();
+    let policySet = policyStore.getPolicySet(policySets[1].name);
+    let ruleResolver = policyStore.getRuleResolver(policySet.policies[1].name);
+    let rules = ruleResolver({ subject: { admin: true } });
     rules = ruleResolver({ subject: { _id: '456' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '456' }, resource: { domain: 'project123' } });
-    rules.length.should.be.eql(1);
-    rules = ruleResolver({ subject: { _id: '456' }, action: Action.update, resource: { domain: 'project123' } });
-    rules.length.should.be.eql(1);
-    rules = ruleResolver({ subject: { _id: '456' }, action: Action.delete, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Update, resource: { domain: 'project123' } });
+    rules.length.should.be.eql(1);
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Delete, resource: { domain: 'project123' } });
+    rules.length.should.be.eql(0);
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Manage, resource: { domain: 'project123' } });
+    rules.length.should.be.eql(1); // NOTE: we ask for more privileges than we are allowed to have, e.g. Action.Manage > Action.Update.
   });
 
   it('should add new rules', () => {

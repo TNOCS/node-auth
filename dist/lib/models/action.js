@@ -1,16 +1,17 @@
 "use strict";
 (function (Action) {
-    Action[Action["none"] = 0] = "none";
-    Action[Action["create"] = 1] = "create";
-    Action[Action["read"] = 2] = "read";
-    Action[Action["update"] = 4] = "update";
-    Action[Action["delete"] = 8] = "delete";
-    Action[Action["author"] = 6] = "author";
-    Action[Action["manage"] = 15] = "manage";
-    Action[Action["approve"] = 16] = "approve";
-    Action[Action["assign"] = 32] = "assign";
-    Action[Action["delegate"] = 64] = "delegate";
-    Action[Action["all"] = 127] = "all";
+    Action[Action["None"] = 0] = "None";
+    Action[Action["Create"] = 1] = "Create";
+    Action[Action["Read"] = 2] = "Read";
+    Action[Action["Update"] = 4] = "Update";
+    Action[Action["Delete"] = 8] = "Delete";
+    Action[Action["Author"] = 6] = "Author";
+    Action[Action["Manage"] = 15] = "Manage";
+    Action[Action["Approve"] = 16] = "Approve";
+    Action[Action["Assign"] = 32] = "Assign";
+    Action[Action["Delegate"] = 64] = "Delegate";
+    Action[Action["Sign"] = 128] = "Sign";
+    Action[Action["All"] = 255] = "All";
 })(exports.Action || (exports.Action = {}));
 var Action = exports.Action;
 //# sourceMappingURL=action.js.map

@@ -3,8 +3,18 @@ import { Action } from './action';
 import { Resource } from './resource';
 
 export enum Decision {
+  /**
+   * The decision is denied
+   */
   Deny,
-  Permit
+  /**
+   * The decision is permitted
+   */
+  Permit,
+  /**
+   * The decision is partially permitted, e.g. when a user requests too many privileges.
+   */
+  PartialPermit
 }
 
 export interface PermissionRequest {

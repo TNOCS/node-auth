@@ -102,12 +102,19 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
 /**
  * Checks if the rule is relevant with respect to the current request.
  *
+ * CHECK
+ * - What to do when the requests asks for more privileges than the rule, e.g. req.action > role.action? Return a partial permit and the allowed actions.
+ * - What to do when the value is not a simple value, but an array or object? In this case, check for instanceof Array, and all required values in the rule must be present in the request.
+ * - When there are multiple rules that match, each giving the subject different privileges, do we still return the first? E.g. when a subject has multiple roles.
+ * - Can we replace the rule in the DB with a function that does the same?
  * @param {Rule} rule
  * @param {PermissionRequest} req
  * @returns {boolean}
  */
 function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
-  if (req.action && rule.action && !(req.action & rule.action)) { return false; } // action does not match
+  if (rule.action) {
+    if (!req.action || !(req.action & rule.action)) { return false; }
+  }
   if (rule.subject) {
     if (!req.subject) { return false; }
     for (const key in rule.subject) {
@@ -125,7 +132,7 @@ function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
   return true;
 }
 
-export function init(name = 'policies', policySets?: PolicySet[]): PolicyStore {
+export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): PolicyStore {
   const db = new lokijs(name);
   if (policySets) {
     loadPolicySets(db, policySets);

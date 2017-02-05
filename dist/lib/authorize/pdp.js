@@ -1,46 +1,40 @@
 "use strict";
 var decision_1 = require('../models/decision');
 var _policyStore;
-function isPermitted(rule, req) {
-    return true;
-}
 function resolvePolicy(policyName, policyCombinator) {
-    var ruleResolver = _policyStore.getRuleResolver(policyName);
+    var resolveRules = _policyStore.getRuleResolver(policyName);
     var isFirst = policyCombinator === 'first';
     return function (req) {
-        var rules = ruleResolver(req);
-        var permit;
+        var rules = resolveRules(req);
+        var permit = false;
         rules.some(function (r) {
-            permit = isPermitted(r, req);
+            permit = r.decision === decision_1.Decision.Permit;
             return isFirst ? permit : !permit;
         });
         return permit;
     };
 }
-exports.resolvePolicy = resolvePolicy;
-function PolicyDecisionPoint(policyStore) {
+function initPDP(policyStore) {
     _policyStore = policyStore;
     return {
         getPolicyResolver: function (policySetName) {
-            var ruleResolvers = [];
+            var policyResolvers = [];
             var policySet = policyStore.getPolicySet(policySetName);
             var policySetCombinator = policySet.combinator;
             policySet.policies.forEach(function (p) {
-                var ruleResolver = _policyStore.getRuleResolver(p.name);
-                ruleResolvers.push({ ruleResolver: ruleResolver, combinator: p.combinator });
+                policyResolvers.push(resolvePolicy(p.name, p.combinator));
             });
-            switch (policySetCombinator) {
-                case 'first':
-                    return function (req) {
-                        return decision_1.Decision.Permit;
-                    };
-                case 'all':
-                    return function (req) {
-                        return decision_1.Decision.Permit;
-                    };
-            }
+            var isFirst = policySetCombinator === 'first';
+            return function (req) {
+                var permit;
+                policyResolvers.some(function (policyResolver) {
+                    permit = policyResolver(req);
+                    return isFirst ? permit : !permit;
+                });
+                return permit;
+            };
         }
     };
 }
-exports.PolicyDecisionPoint = PolicyDecisionPoint;
+exports.initPDP = initPDP;
 //# sourceMappingURL=pdp.js.map

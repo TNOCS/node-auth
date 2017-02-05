@@ -1,13 +1,12 @@
 import { Decision } from '../models/decision';
-import { Rule } from '../models/rule';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { PolicyStore } from '../../lib/authorize/policy-store';
 import { PermissionRequest } from '../models/decision';
 
 let _policyStore: PolicyStore;
 
-function isPermitted(rule: Rule, req: PermissionRequest) {
-  return true;
+export interface PolicyDecisionPoint {
+  getPolicyResolver(policySetName: string): (req: PermissionRequest) => boolean;
 }
 
 /**
@@ -18,45 +17,49 @@ function isPermitted(rule: Rule, req: PermissionRequest) {
  * @param {DecisionCombinator} policyCombinator
  * @returns
  */
-export function resolvePolicy(policyName: string, policyCombinator: DecisionCombinator) {
-  const ruleResolver = _policyStore.getRuleResolver(policyName);
+function resolvePolicy(policyName: string, policyCombinator: DecisionCombinator) {
+  const resolveRules = _policyStore.getRuleResolver(policyName);
   const isFirst = policyCombinator === 'first';
   return (req: PermissionRequest) => {
-    const rules = ruleResolver(req);
-    let permit: boolean;
+    const rules = resolveRules(req);
+    let permit = false;
     rules.some(r => {
-      permit = isPermitted(r, req);
+      permit = r.decision === Decision.Permit;
       return isFirst ? permit : !permit;
     });
     return permit;
   };
 }
 
-
-export function PolicyDecisionPoint(policyStore: PolicyStore) {
+/**
+ * The policy decision point allows you to retrieve a policy resolver,
+ * i.e. you can use the returned function to resolve the permissions for
+ * a request that is protected by a particular policy set.
+ *
+ * @export
+ * @param {PolicyStore} policyStore
+ * @returns
+ */
+export function initPDP(policyStore: PolicyStore): PolicyDecisionPoint {
   _policyStore = policyStore;
   return {
     /** A policy resolver helps you resolve permission requests. */
     getPolicyResolver(policySetName: string) {
-      const ruleResolvers: { ruleResolver: (req: PermissionRequest) => Rule[], combinator: DecisionCombinator }[] = [];
+      const policyResolvers: Array<(req: PermissionRequest) => boolean> = [];
       const policySet = policyStore.getPolicySet(policySetName);
       const policySetCombinator = policySet.combinator;
       policySet.policies.forEach(p => {
-        const ruleResolver = _policyStore.getRuleResolver(p.name);
-        ruleResolvers.push({ ruleResolver: ruleResolver, combinator: p.combinator });
+        policyResolvers.push(resolvePolicy(p.name, p.combinator));
       });
-
-      switch (policySetCombinator) {
-        case 'first':
-          return (req: PermissionRequest) => {
-
-            return Decision.Permit;
-          };
-        case 'all':
-          return (req: PermissionRequest) => {
-            return Decision.Permit;
-          };
-      }
+      const isFirst = policySetCombinator === 'first';
+      return (req: PermissionRequest) => {
+        let permit: boolean;
+        policyResolvers.some(policyResolver => {
+          permit = policyResolver(req);
+          return isFirst ? permit : !permit;
+        });
+        return permit;
+      };
     }
-  }
+  };
 }

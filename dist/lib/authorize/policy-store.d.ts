@@ -23,4 +23,4 @@ export interface PolicyStore {
     getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
     save(callback: (err: Error) => void): any;
 }
-export declare function init(name?: string, policySets?: PolicySet[]): PolicyStore;
+export declare function initPolicyStore(name?: string, policySets?: PolicySet[]): PolicyStore;
