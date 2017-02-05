@@ -13,6 +13,8 @@ addons:
 services:
   - mongodb
 script:
-    - npm run build
+  - npm run build
+after_success:
+  - npm test
 env:
   - TRAVIS=travis CXX=g++-4.8

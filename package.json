@@ -7,7 +7,9 @@
     "start": "node dist/example/server.js",
     "build": "tsc",
     "postinstall": "typings install && tsc",
-    "test": "istanbul cover node_modules/mocha/bin/_mocha -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js"
+    "simpletest": "mocha -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js",
+    "test": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js",
+    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"
   },
   "keywords": [
     "node",
@@ -33,9 +35,11 @@
     "@types/sinon": "^1.16.34",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
+    "codecov": "^1.0.1",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mongoose-mock": "^0.4.0",
+    "nyc": "^10.1.2",
     "proxyquire": "^1.7.10",
     "sinon": "^1.17.7",
     "typescript": "^2.1.5",
@@ -53,5 +57,13 @@
     "morgan": "^1.7.0",
     "nodemailer": "^2.7.2",
     "nodemailer-mailgun-transport": "^1.2.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TNOCS/node-auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TNOCS/node-auth/issues"
+  },
+  "homepage": "https://github.com/TNOCS/node-auth#readme"
 }
