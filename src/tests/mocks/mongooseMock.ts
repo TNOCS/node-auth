@@ -52,7 +52,7 @@ const Schema = function () {
           return new SetterGetter();
         }
       };
-    }
+    };
     return new SetterGetter();
   };
 
