@@ -7,6 +7,6 @@ export interface Subject {
     verified?: boolean;
     subscribed?: boolean;
     createdAt?: Date;
-    role?: string;
+    role?: string[];
     data?: Object;
 }

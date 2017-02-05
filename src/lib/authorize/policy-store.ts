@@ -102,12 +102,45 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
 }
 
 /**
+ * Match two arrays: each value in required should be present in the actual array.
+ *
+ * @param {(string[] | number[])} ref
+ * @param {(string[] | number[])} actual
+ * @return {boolean}
+ */
+function matchArrays(ref: any[], actual: any[]) {
+  let isMatch = false;
+  ref.some(r => {
+    isMatch = actual.indexOf(r) >= 0;
+    return !isMatch;
+  });
+  return isMatch;
+}
+
+/**
+ * Match properties, i.e. check for a strict equivalence of strings and numbers, or arrays of strings and numbers.
+ *
+ * @param {(string | number | string[] | number[])} ruleProp
+ * @param {(string | number | string[] | number[])} reqProp
+ * @returns
+ */
+function matchProperties(ruleProp: string | number | string[] | number[], reqProp: string | number | string[] | number[]) {
+  if (ruleProp instanceof Array && reqProp instanceof Array) {
+    return matchArrays(ruleProp, reqProp);
+  } else {
+    return ruleProp === reqProp;
+  }
+}
+
+/**
  * Checks if the rule is relevant with respect to the current request.
  *
- * CHECK
- * - What to do when the requests asks for more privileges than the rule, e.g. req.action > role.action? Return a partial permit and the allowed actions.
- * - What to do when the value is not a simple value, but an array or object? In this case, check for instanceof Array, and all required values in the rule must be present in the request.
- * - When there are multiple rules that match, each giving the subject different privileges, do we still return the first? E.g. when a subject has multiple roles.
+ * - When the request asks for more privileges than allowed, return false.
+ * - When the request does not contain the required properties, return false.
+ * - Otherwise, return true
+ *
+ * OPEN QUESTIONS
+ * - When there are multiple rules that match, each giving the subject different privileges, do we still return the first? E.g. when a subject has multiple roles. Currently, this is the case.
  * - Can we replace the rule in the DB with a function that does the same?
  * @param {Rule} rule
  * @param {PermissionRequest} req
@@ -120,15 +153,13 @@ function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
   if (rule.subject) {
     if (!req.subject) { return false; }
     for (const key in rule.subject) {
-      if (!rule.subject.hasOwnProperty(key)) { continue; }
-      if (!req.subject.hasOwnProperty(key) || rule.subject[key] !== req.subject[key]) { return false; }
+      if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
     }
   }
   if (rule.resource) {
     if (!req.resource) { return false; }
     for (const key in rule.resource) {
-      if (!rule.resource.hasOwnProperty(key)) { continue; }
-      if (!req.resource.hasOwnProperty(key) || rule.resource[key] !== req.resource[key]) { return false; }
+      if (!matchProperties(rule.resource[key], req.resource[key])) { return false; };
     }
   }
   return true;

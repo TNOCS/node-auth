@@ -1,5 +1,5 @@
 export interface Resource {
-    domain?: string;
+    domain?: string[];
     type?: string;
-    [key: string]: string | number;
+    [key: string]: string | string[] | number | number[];
 }

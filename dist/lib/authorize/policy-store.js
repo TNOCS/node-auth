@@ -28,6 +28,22 @@ function loadPolicySets(db, policySets) {
         loadPolicySet(db, psCol, ps);
     });
 }
+function matchArrays(ref, actual) {
+    var isMatch = false;
+    ref.some(function (r) {
+        isMatch = actual.indexOf(r) >= 0;
+        return !isMatch;
+    });
+    return isMatch;
+}
+function matchProperties(ruleProp, reqProp) {
+    if (ruleProp instanceof Array && reqProp instanceof Array) {
+        return matchArrays(ruleProp, reqProp);
+    }
+    else {
+        return ruleProp === reqProp;
+    }
+}
 function isRuleRelevant(rule, req) {
     if (rule.action) {
         if (!req.action || !((req.action & rule.action) === req.action)) {
@@ -39,12 +55,10 @@ function isRuleRelevant(rule, req) {
             return false;
         }
         for (var key in rule.subject) {
-            if (!rule.subject.hasOwnProperty(key)) {
-                continue;
-            }
-            if (!req.subject.hasOwnProperty(key) || rule.subject[key] !== req.subject[key]) {
+            if (!matchProperties(rule.subject[key], req.subject[key])) {
                 return false;
             }
+            ;
         }
     }
     if (rule.resource) {
@@ -52,12 +66,10 @@ function isRuleRelevant(rule, req) {
             return false;
         }
         for (var key in rule.resource) {
-            if (!rule.resource.hasOwnProperty(key)) {
-                continue;
-            }
-            if (!req.resource.hasOwnProperty(key) || rule.resource[key] !== req.resource[key]) {
+            if (!matchProperties(rule.resource[key], req.resource[key])) {
                 return false;
             }
+            ;
         }
     }
     return true;
