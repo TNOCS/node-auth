@@ -8,8 +8,8 @@
     "build": "tsc",
     "postinstall": "typings install && tsc",
     "simpletest": "mocha -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js",
-    "test": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js",
-    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"
+    "test": "istanbul cover node_modules/mocha/bin/_mocha -- -u tdd --timeout 999999 --colors dist/tests/**/*.spec.js",
+    "posttest": "codecov -f coverage/coverage.json"
   },
   "keywords": [
     "node",
@@ -39,7 +39,6 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "mongoose-mock": "^0.4.0",
-    "nyc": "^10.1.2",
     "proxyquire": "^1.7.10",
     "sinon": "^1.17.7",
     "typescript": "^2.1.5",

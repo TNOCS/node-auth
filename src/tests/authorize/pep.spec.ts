@@ -11,7 +11,7 @@ import { PolicyEnforcementPoint, initPEP } from '../../lib/authorize/pep';
 
 chai.should();
 
-describe('The PolicyDecisionPoint', () => {
+describe('The PolicyEnforcementPoint', () => {
   let policyStore: PolicyStore;
   let pep: PolicyEnforcementPoint;
   let server: sinon.SinonFakeServer;
