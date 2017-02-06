@@ -16,6 +16,5 @@ script:
   - npm run build
 after_success:
   - npm test
-  - npm run posttest
 env:
   - TRAVIS=travis CXX=g++-4.8
