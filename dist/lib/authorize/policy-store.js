@@ -28,20 +28,35 @@ function loadPolicySets(db, policySets) {
         loadPolicySet(db, psCol, ps);
     });
 }
-function matchArrays(ref, actual) {
+function matchArrays(required, actual) {
     var isMatch = false;
-    ref.some(function (r) {
+    required.some(function (r) {
         isMatch = actual.indexOf(r) >= 0;
         return !isMatch;
     });
     return isMatch;
 }
 function matchProperties(ruleProp, reqProp) {
-    if (ruleProp instanceof Array && reqProp instanceof Array) {
-        return matchArrays(ruleProp, reqProp);
+    if (ruleProp instanceof Array) {
+        if (reqProp instanceof Array) {
+            return matchArrays(ruleProp, reqProp);
+        }
+        else {
+            return matchArrays(ruleProp, [reqProp]);
+        }
     }
     else {
-        return ruleProp === reqProp;
+        if (reqProp instanceof Array) {
+            if (reqProp.length > 1) {
+                return false;
+            }
+            else {
+                return ruleProp === reqProp[0];
+            }
+        }
+        else {
+            return ruleProp === reqProp;
+        }
     }
 }
 function isRuleRelevant(rule, req) {

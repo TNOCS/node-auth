@@ -116,7 +116,7 @@ describe('The PolicyEnforcementPoint', () => {
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'DELETE', user: { admin: true }, params: { articleID: ['123_article'] } }, <any>response, <any>next);
+    policyEnforcer(<any> { method: 'DELETE', user: { admin: true }, params: { articleID: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
   });
@@ -146,19 +146,19 @@ describe('The PolicyEnforcementPoint', () => {
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'GET', user: { _id: '123' }, params: { articleID: ['123_article'] } }, <any>response, <any>next);
+    policyEnforcer(<any> { method: 'GET', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'PUT', user: { _id: '123' }, params: { articleID: ['123_article'] } }, <any>response, <any>next);
+    policyEnforcer(<any> { method: 'PUT', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'PUT', user: { _id: '456' }, params: { articleID: ['123_article'] } }, <any>response, <any>next);
+    policyEnforcer(<any> { method: 'PUT', user: { _id: '456' }, params: { articleID: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.false;
     responseSpy.calledOnce.should.be.true;
   });
@@ -166,7 +166,7 @@ describe('The PolicyEnforcementPoint', () => {
   it('should allow you to specify your own request generating function.', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, (req) => {
-      return <PermissionRequest> { subject: {_id: '123'}, action: Action.Delete, resource: { articleID: ['123_article']} };
+      return <PermissionRequest> { subject: {_id: '123'}, action: Action.Delete, resource: { articleID: '123_article'} };
     });
     const responseSpy = sinon.spy();
     const response = {

@@ -104,13 +104,13 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
 /**
  * Match two arrays: each value in required should be present in the actual array.
  *
- * @param {(string[] | number[])} ref
+ * @param {(string[] | number[])} required
  * @param {(string[] | number[])} actual
  * @return {boolean}
  */
-function matchArrays(ref: any[], actual: any[]) {
+function matchArrays(required: any[], actual: any[]) {
   let isMatch = false;
-  ref.some(r => {
+  required.some(r => {
     isMatch = actual.indexOf(r) >= 0;
     return !isMatch;
   });
@@ -125,12 +125,37 @@ function matchArrays(ref: any[], actual: any[]) {
  * @returns
  */
 function matchProperties(ruleProp: string | number | string[] | number[], reqProp: string | number | string[] | number[]) {
-  if (ruleProp instanceof Array && reqProp instanceof Array) {
-    return matchArrays(ruleProp, reqProp);
+  if (ruleProp instanceof Array) {
+    // ruleProp is an array
+    if (reqProp instanceof Array) {
+      // they are both arrays
+      return matchArrays(ruleProp, reqProp);
+    } else {
+      // in case the ruleProp only has one element, there might still be a match. Otherwise, fails.
+      return matchArrays(ruleProp, [reqProp]);
+    }
   } else {
-    return ruleProp === reqProp;
+    // ruleProp is a single value
+    if (reqProp instanceof Array) {
+      if (reqProp.length > 1) {
+        // You ask for more than is possible with this rule
+        return false;
+      } else {
+        // Both are single values
+        return ruleProp === reqProp[0];
+      }
+    } else {
+      // reqProp is also a single value
+      return ruleProp === reqProp;
+    }
   }
 }
+// if (ruleProp instanceof Array && reqProp instanceof Array) {
+//   return matchArrays(ruleProp, reqProp);
+// } else {
+//   return ruleProp === reqProp;
+// }
+// }
 
 /**
  * Checks if the rule is relevant with respect to the current request.
