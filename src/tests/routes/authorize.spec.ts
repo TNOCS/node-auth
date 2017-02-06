@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'test';
 
 import { User, IUser, IUserModel } from '../../lib/models/user';
+import { Rule } from '../../lib/models/rule';
 import * as chai from 'chai';
 import { server } from '../../example/server';
 
@@ -99,6 +100,8 @@ describe('Authorizations route', () => {
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
           res.body.success.should.be.true;
+          const rules: Rule[] = res.body.message;
+          rules.length.should.be.eql(4);
           done();
         });
     });
@@ -107,10 +110,13 @@ describe('Authorizations route', () => {
       chai.request(server)
         .get('/api/authorizations')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', johnnyToken)
+        .set('x-access-token', adminToken)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
           res.body.success.should.be.true;
+          const rules: Rule[] = res.body.message;
+          rules[0].subject.admin.should.be.true;
+          rules.length.should.be.eql(4);
           done();
         });
     });

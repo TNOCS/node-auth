@@ -94,6 +94,18 @@ function isRuleRelevant(rule, req) {
     }
     return true;
 }
+function isSubjectRelevantForRule(rule, req) {
+    if (!rule.subject || !req.subject) {
+        return false;
+    }
+    for (var key in rule.subject) {
+        if (!matchProperties(rule.subject[key], req.subject[key])) {
+            return false;
+        }
+        ;
+    }
+    return true;
+}
 function initPolicyStore(name, policySets) {
     if (name === void 0) { name = 'policies'; }
     var db = new lokijs(name);
@@ -141,6 +153,20 @@ function initPolicyStore(name, policySets) {
                 });
                 return privileges;
             };
+        },
+        getPrivileges: function (subject) {
+            var rules = [];
+            psCollection.find().forEach(function (ps) {
+                ps.policies.forEach(function (p) {
+                    var ruleCollection = db.getCollection(p.name);
+                    ruleCollection
+                        .chain()
+                        .where(function (r) { return isSubjectRelevantForRule(r, { subject: subject }); })
+                        .data()
+                        .forEach(function (r) { return rules.push(r); });
+                });
+            });
+            return rules;
         },
         getPolicyEditor: function (policyName) {
             var ruleCollection = db.getCollection(policyName);

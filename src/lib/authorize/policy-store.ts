@@ -1,5 +1,6 @@
 import * as lokijs from 'lokijs';
 import { Rule } from '../models/rule';
+import { Subject } from '../models/subject';
 import { PermissionRequest } from '../models/decision';
 import { PolicySet, Policy, PolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
@@ -40,6 +41,8 @@ export interface PolicyStore {
   getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
   /** Returns a function that can be used to retreive a subject's privileges with respect to a certain context. Request action is ignored. */
   getPrivilegesResolver(policyName: string): (permissionRequest: PermissionRequest) => Action;
+  /** Get an authenticated user's privileges */
+  getPrivileges(subject: Subject): Rule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
   getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
   /** Save the database */
@@ -195,6 +198,22 @@ function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
   return true;
 }
 
+
+/**
+ * Checks if the rule is relevant for a certain subject.
+ *
+ * @param {Rule} rule
+ * @param {PermissionRequest} req
+ * @returns {boolean}
+ */
+function isSubjectRelevantForRule(rule: Rule, req: PermissionRequest): boolean {
+  if (!rule.subject || !req.subject) { return false; }
+  for (const key in rule.subject) {
+    if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
+  }
+  return true;
+}
+
 export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): PolicyStore {
   const db = new lokijs(name);
   if (policySets) {
@@ -241,6 +260,20 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
         });
         return privileges;
       };
+    },
+    getPrivileges(subject: Subject): Rule[] {
+      const rules: Rule[] = [];
+      psCollection.find().forEach(ps => {
+        ps.policies.forEach(p => {
+          const ruleCollection = db.getCollection<Rule>(p.name);
+          ruleCollection
+            .chain()
+            .where(r => isSubjectRelevantForRule(r, { subject: subject }))
+            .data()
+            .forEach(r => rules.push(r));
+        });
+      });
+      return rules;
     },
     getPolicyEditor(policyName: string) {
       const ruleCollection = db.getCollection<Rule>(policyName);

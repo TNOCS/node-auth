@@ -1,4 +1,5 @@
 import { Rule } from '../models/rule';
+import { Subject } from '../models/subject';
 import { PermissionRequest } from '../models/decision';
 import { PolicySet, PolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
@@ -21,6 +22,7 @@ export interface PolicyStore {
     getPolicyRules(policyName: string): Rule[];
     getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
     getPrivilegesResolver(policyName: string): (permissionRequest: PermissionRequest) => Action;
+    getPrivileges(subject: Subject): Rule[];
     getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
     save(callback: (err: Error) => void): any;
 }

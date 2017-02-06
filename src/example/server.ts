@@ -27,32 +27,7 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
 server.use(bodyParser.json({ type: 'application/json' }));
 
-// use morgan to log requests to the console, but don't show the log when it is test
-if (config.util.getEnv('NODE_ENV') !== 'test') {
-  server.use(morgan('dev'));
-}
-
-////////////////////////
-// routes for testing //
-////////////////////////
-server.get('/', (req, res) => {
-  res.send('Hello! The API is at http://localhost:' + port + '/api');
-});
-
-server.use(nodeAuth(server, {
-  secretKey: config.secret,
-  blockUnauthenticatedUser: false, // if true, default, no unauthenticated user will pass
-  onUserChanged: (user: IUser, req: Request, change: CRUD) => {
-    // console.log(`User ${change}d:`);
-    // console.log(JSON.stringify(user, null, 2));
-  }
-}));
-
-server.route('/unprotected/resource')
-  .get((req, res, next) => {
-    res.json({ success: true });
-  });
-
+// Load of create a policy store
 const policyStore = initPolicyStore('test-policies.json', [{
   name: 'Main policy set',
   combinator: 'first',
@@ -61,6 +36,7 @@ const policyStore = initPolicyStore('test-policies.json', [{
     combinator: 'first',
     rules: [{
       subject: { admin: true },
+      action: Action.All,
       decision: Decision.Permit
     }]
   }, {
@@ -111,6 +87,33 @@ const policyStore = initPolicyStore('test-policies.json', [{
     }]
   }]
 }]);
+
+// use morgan to log requests to the console, but don't show the log when it is test
+if (config.util.getEnv('NODE_ENV') !== 'test') {
+  server.use(morgan('dev'));
+}
+
+////////////////////////
+// routes for testing //
+////////////////////////
+server.get('/', (req, res) => {
+  res.send('Hello! The API is at http://localhost:' + port + '/api');
+});
+
+server.use(nodeAuth(server, {
+  secretKey: config.secret,
+  blockUnauthenticatedUser: false, // if true, default, no unauthenticated user will pass beyond this point
+  policyStore: policyStore,
+  onUserChanged: (user: IUser, req: Request, change: CRUD) => {
+    // console.log(`User ${change}d:`);
+    // console.log(JSON.stringify(user, null, 2));
+  }
+}));
+
+server.route('/unprotected/resource')
+  .get((req, res, next) => {
+    res.json({ success: true });
+  });
 
 const pep = initPEP(policyStore);
 const cop = pep.getPolicyEnforcer('Main policy set');
