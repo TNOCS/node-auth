@@ -9,6 +9,7 @@ export interface INodeAuthOptions {
     login?: string | boolean;
     signup?: string | boolean;
     profile?: string | boolean;
+    authorizations?: string | boolean;
     users?: string;
     onUserChanged?: (user: IUser, req: Request, change: CRUD) => IUser | void;
     verify?: {

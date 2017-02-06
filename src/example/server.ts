@@ -122,6 +122,10 @@ server.all('/protected/:articleID', cop, (req, res, next) => {
 // =======================
 // start the server ======
 // =======================
-server.listen(port);
+// See also: http://www.marcusoft.net/2015/10/eaddrinuse-when-watching-tests-with-mocha-and-supertest.html
+if (!module.parent) {
+  server.listen(port);
+}
+// server.listen(port);
 console.log('Magic happens at http://localhost:' + port);
 // module.exports = app; // for testing

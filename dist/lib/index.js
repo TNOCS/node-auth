@@ -4,6 +4,7 @@ var jwt = require('jsonwebtoken');
 var userRoute = require('./routes/user');
 var loginRoute = require('./routes/login');
 var verifyRoute = require('./routes/verify');
+var authzRoute = require('./routes/authorize');
 function authenticateUser(secretKey, blockUnauthenticatedUser) {
     if (blockUnauthenticatedUser === void 0) { blockUnauthenticatedUser = true; }
     var authnErrorHandler = blockUnauthenticatedUser
@@ -65,6 +66,10 @@ function createApiRoute(apiRoutes, options) {
         routes.push({ route: "" + apiRoute + profileRoute, message: 'PUT: Updates your profile, you can send first, name, email, and password.' });
         routes.push({ route: "" + apiRoute + profileRoute, message: 'DELETE: Deletes your profile.' });
     }
+    var authorizationRoute = getRoute(options.authorizations, '/authorizations');
+    if (authorizationRoute) {
+        routes.push({ route: "" + apiRoute + authorizationRoute, message: 'GET: Authorization route to get a user\'s privileges.' });
+    }
     apiRoutes.get('/', function (req, res) {
         res.json(routes);
     });
@@ -74,6 +79,7 @@ function createRoutes(secretKey, options) {
     loginRoute.init(options);
     userRoute.init(options);
     verifyRoute.init(options);
+    authzRoute.init(options);
     createApiRoute(apiRoutes, options);
     var login = getRoute(options.login, '/login');
     if (login) {
@@ -99,6 +105,11 @@ function createRoutes(secretKey, options) {
             .get(userRoute.getProfile)
             .put(userRoute.updateProfile)
             .delete(userRoute.deleteProfile);
+    }
+    var authorizationRoute = getRoute(options.authorizations, '/authorizations');
+    if (authorizationRoute) {
+        apiRoutes.route(authorizationRoute)
+            .get(authzRoute.authorize);
     }
     var usersRoute = getRoute(options.users, '/users');
     if (usersRoute) {

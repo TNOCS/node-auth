@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import * as userRoute from './routes/user';
 import * as loginRoute from './routes/login';
 import * as verifyRoute from './routes/verify';
+import * as authzRoute from './routes/authorize';
 import { INodeAuthOptions } from './models/options';
 
 /**
@@ -90,6 +91,12 @@ function createApiRoute(apiRoutes: Router, options: INodeAuthOptions) {
     routes.push({ route: `${apiRoute}${profileRoute}`, message: 'PUT: Updates your profile, you can send first, name, email, and password.' });
     routes.push({ route: `${apiRoute}${profileRoute}`, message: 'DELETE: Deletes your profile.' });
   }
+
+  const authorizationRoute = getRoute(options.authorizations, '/authorizations');
+  if (authorizationRoute) {
+    routes.push({ route: `${apiRoute}${authorizationRoute}`, message: 'GET: Authorization route to get a user\'s privileges.' });
+  }
+
   apiRoutes.get('/', (req: Request, res: Response) => {
     res.json(routes);
   });
@@ -100,6 +107,7 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
   loginRoute.init(options);
   userRoute.init(options);
   verifyRoute.init(options);
+  authzRoute.init(options);
 
   createApiRoute(apiRoutes, options);
 
@@ -134,6 +142,12 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
       .get(userRoute.getProfile)
       .put(userRoute.updateProfile)
       .delete(userRoute.deleteProfile);
+  }
+
+  const authorizationRoute = getRoute(options.authorizations, '/authorizations');
+  if (authorizationRoute) {
+    apiRoutes.route(authorizationRoute)
+      .get(authzRoute.authorize);
   }
 
   const usersRoute = getRoute(options.users, '/users');

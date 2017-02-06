@@ -7,20 +7,18 @@ import { server } from '../example/server';
 chai.should();
 chai.use(require('chai-http'));
 
-describe('Users', () => {
+describe('Authorize route', () => {
   let adminToken: string;
-  let userToken: string;
-  let users: IUser[];
+  let johnnyToken: string;
   let adminUser: IUserModel;
   let regularUser: IUserModel;
-
+  let verifiedUser: IUserModel;
+  let users: IUser[] = [];
   /**
    * Before we start the tests, we empty the database and
    * - create an admin
    * - create two regular user
    *
-   * PLEASE NOTE: There is an order in these tests, and a dependence between them.
-   * Some test allow a user to login, and his token is saved for subsequent calls.
    */
   before((done: Function) => {
     User.remove({}, (err) => {
@@ -28,7 +26,8 @@ describe('Users', () => {
         name: 'Erik Vullings',
         email: 'erik.vullings@gmail.com',
         password: 'password',
-        verified: false,
+        subscribed: true,
+        verified: true,
         admin: true,
         data: {}
       });
@@ -36,343 +35,113 @@ describe('Users', () => {
         name: 'John Smith',
         email: 'john.smith@gmail.com',
         password: 'johnny',
-        verified: false,
+        verified: true,
+        subscribed: true,
         data: {}
       });
-      const anotherUser = new User({
+      verifiedUser = new User({
         name: 'Jane Doe',
         email: 'jane.doe@gmail.com',
         password: 'jane',
-        verified: false,
+        subscribed: true,
+        verified: true,
         data: {}
       });
-      adminUser.save((err, res) => regularUser.save((e, r) => anotherUser.save((e, r) => done())));
+      adminUser.save((err, r: IUserModel) => {
+        users.push(<IUser>r.toJSON());
+        regularUser.save((e, r: IUserModel) => {
+          users.push(<IUser>r.toJSON());
+          verifiedUser.save((e, r: IUserModel) => {
+            users.push(<IUser>r.toJSON());
+            chai.request(server)
+              .post('/api/login')
+              .set('content-type', 'application/x-www-form-urlencoded')
+              .send({ email: 'Erik.Vullings@GMAIL.com', password: 'password' })
+              .end((err, res) => {
+                adminToken = res.body.token;
+                chai.request(server)
+                  .post('/api/login')
+                  .set('content-type', 'application/x-www-form-urlencoded')
+                  .send({ email: 'john.smith@gmail.com', password: 'johnny' })
+                  .end((err, res) => {
+                    johnnyToken = res.body.token;
+                    done();
+                  });
+              });
+          });
+        });
+      });
     });
   });
 
-  describe('/POST login', () => {
-    it('should not be able to login without email + pwd', (done: Function) => {
-      chai.request(server)
-        .post('/api/login')
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
-          done();
-        });
-    });
+  /**
+   *  RESOURCE /projects/12345
+   * - A user should GET a resource when it is public
+   * - A user should GET a protected file if he has READ, EDIT, or ADMIN rights for that particular resource
+   * - A user should not GET a protected file if he has no READ rights for that particular resource
+   * - A user with READ rights should not be able to change the protected file for that particular resource
+   * - A user with EDIT rights should be able to change PUT/POST, but not DELETE, the protected file for that particular resource
+   * - A user with ADMIN rights should be able to change PUT/POST/DELETE the protected file for that particular resource
+   * - A user with ADMIN rights should be able to change the users that can access this file for that particular resource:
+   *   add or delete a user, and change the READ, EDIT, ADMIN rights of a user
+   * - An ADMIN user i.e. user.admin === true, should have ADMIN rights for all resources
+   *
+   * Therefore, we need to intercept each call to a resource, look it up, and check if it:
+   * 1. Is it public. If yes, call `next()`
+   * 2. It is not public:
+   *
+   */
 
-    it('should not be able to login with an incorrect password', (done: Function) => {
+  describe('/GET /unprotected/resource', () => {
+    it('should be able to get unprotected resources anonymously', (done: Function) => {
       chai.request(server)
-        .post('/api/login')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: 'Erik.Vullings@GMAIL.com', password: 'pwd' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('admins should be able to login with a correct password', (done: Function) => {
-      const email = 'Erik.Vullings@GMAIL.com';
-      chai.request(server)
-        .post('/api/login')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: email, password: 'password' })
+        .get('/unprotected/resource')
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
           res.body.success.should.be.true;
-          res.body.should.have.token;
-          res.body.should.have.user;
-          res.body.user.should.not.have.password;
-          res.body.user.email.should.be.eql(email.toLowerCase());
-          adminToken = res.body.token;
           done();
         });
     });
 
-    it('users should be able to login with a correct password', (done: Function) => {
-      const email = 'john.smith@gmail.com';
+    it('should be able to get unprotected resources as a user', (done: Function) => {
       chai.request(server)
-        .post('/api/login')
+        .get('/unprotected/resource')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: email, password: 'johnny' })
+        .set('x-access-token', johnnyToken)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
           res.body.success.should.be.true;
-          res.body.should.have.token;
-          res.body.should.have.user;
-          res.body.user.should.not.have.password;
-          res.body.user.email.should.be.eql(email.toLowerCase());
-          userToken = res.body.token;
           done();
         });
     });
   });
 
-  describe('/GET users', () => {
-    it('should return false for unauthenticated users', (done: Function) => {
+  describe('/GET /protected/resource', () => {
+    it('should be able to get protected PUBLIC resources anonymously', (done: Function) => {
       chai.request(server)
-        .get('/api/users')
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should return false for authenticated but non-admin users', (done: Function) => {
-      chai.request(server)
-        .get('/api/users')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should return a list of IUser users without pwd for authenticated admins', (done: Function) => {
-      chai.request(server)
-        .get('/api/users')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
+        .get('/protected/public_article')
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('array');
-          res.body.length.should.be.eql(3);
-          users = res.body;
-          users.forEach(u => u.hasOwnProperty('password').should.be.false);
+          res.body.success.should.be.true;
           done();
         });
     });
 
-    it('should return one user by id if he is admin', (done: Function) => {
+    it('should be able to get protected PUBLIC resources as a user', (done: Function) => {
       chai.request(server)
-        .get('/api/users/' + users[1]._id)
+        .get('/protected/public_article')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
+        .set('x-access-token', johnnyToken)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          const user = <IUser> res.body.user;
-          user.name.should.be.eql(users[1].name);
+          res.body.success.should.be.true;
           done();
         });
     });
 
-    it('should return one user by id if it is himself', (done: Function) => {
+    it('should not be able to get protected resources anonymously', (done: Function) => {
       chai.request(server)
-        .get('/api/users/' + users[1]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          const user = <IUser> res.body.user;
-          user.name.should.be.eql(users[1].name);
-          done();
-        });
-    });
-
-    it('should not return a user by id if he is neither admin nor himself', (done: Function) => {
-      chai.request(server)
-        .get('/api/users/' + users[0]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-  });
-
-  describe('/POST signup', () => {
-    const email = 'who_the_heck.cares2@gmail.com';
-    it('should allow unauthenticated users to create a user', (done: Function) => {
-      chai.request(server)
-        .post('/api/signup/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: email, password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.user.email.should.be.eql(email);
-          done();
-        });
-    });
-
-    it('should not allow you to create an existing user', (done: Function) => {
-      chai.request(server)
-        .post('/api/signup/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should reject authenticated user', (done: Function) => {
-      chai.request(server)
-        .post('/api/signup/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send({ email: 'my.ohmy@email.com', password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-  });
-
-  describe('/POST users', () => {
-    it('should return false for unauthenticated users', (done: Function) => {
-      chai.request(server)
-        .post('/api/users/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .send({ email: 'Who.Cares@GMAIL.com', password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should return false for authenticated non-admin users', (done: Function) => {
-      chai.request(server)
-        .post('/api/users/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send({ email: 'Who.Cares@GMAIL.com', password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.METHOD_NOT_ALLOWED);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should return true for admin users', (done: Function) => {
-      const email = 'Who.Cares@GMAIL.com';
-      chai.request(server)
-        .post('/api/users/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
-        .send({ email: email, password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.user.email.should.be.eql(email.toLowerCase());
-          done();
-        });
-    });
-
-    it('should not allow you to create an existing user', (done: Function) => {
-      chai.request(server)
-        .post('/api/users/')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
-        .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
-          res.body.should.be.a('object');
-          done();
-        });
-    });
-  });
-
-  describe('/PUT users', () => {
-    it('should allow authenticated users to change their name', (done: Function) => {
-      const newName = 'New name';
-      chai.request(server)
-        .put('/api/users/' + users[1]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send({ name: newName })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.user.name.should.be.eql(newName);
-          done();
-        });
-    });
-
-    it('should not allow regular users to change their admin status', (done: Function) => {
-      chai.request(server)
-        .put('/api/users/' + users[1]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send({ admin: true })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.should.not.have.admin;
-          done();
-        });
-    });
-
-    it('should not allow regular users to change someone else\'s name', (done: Function) => {
-      const newName = 'New name';
-      chai.request(server)
-        .put('/api/users/' + users[2]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send({ name: newName })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
-          res.body.should.be.a('object');
-          res.body.success.should.be.false;
-          done();
-        });
-    });
-
-    it('should allow admins to change an admin status', (done: Function) => {
-      chai.request(server)
-        .put('/api/users/' + users[2]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
-        .send({ admin: true })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.user.admin.should.be.true;
-          done();
-        });
-    });
-
-    it('should allow admins to change a user\'s name', (done: Function) => {
-      const name = 'Another new Name';
-      chai.request(server)
-        .put('/api/users/' + users[2]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
-        .send({ name: name })
-        .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.user.name.should.be.eql(name);
-          done();
-        });
-    });
-  });
-
-  describe('/GET profile', () => {
-    it('should not allow unauthenticated users to get a profile', (done: Function) => {
-      chai.request(server)
-        .get('/api/profile')
+        .get('/protected/protected_article')
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.FORBIDDEN);
           res.body.success.should.be.false;
@@ -380,87 +149,252 @@ describe('Users', () => {
         });
     });
 
-    it('should allow users to get their profile', (done: Function) => {
+    it('should not be able to get protected resources as a user', (done: Function) => {
       chai.request(server)
-        .get('/api/profile')
+        .get('/protected/456_article')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
+        .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.user.email.should.be.eql(users[1].email);
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
           done();
         });
     });
 
-    it('should allow users to update their profile', (done: Function) => {
-      const name = 'Cool Cat';
+    it('should be able to get protected resources as an admin', (done: Function) => {
       chai.request(server)
-        .put('/api/profile')
+        .get('/protected/456_article')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
-        .send( { name: name })
+        .set('x-access-token', adminToken)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.user.name.should.be.eql(name);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+
+    it('should be able to get protected resources as an owner', (done: Function) => {
+      chai.request(server)
+        .get('/protected/johnny_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
           done();
         });
     });
   });
 
-  describe('/DELETE users', () => {
-    it('should not allow you to delete a non-existing user', (done: Function) => {
+  describe('/PUT /protected/resource', () => {
+    it('should not be able to update protected PUBLIC resources anonymously', (done: Function) => {
       chai.request(server)
-        .del('/api/users/1')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', adminToken)
+        .put('/protected/public_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR);
-          res.body.should.be.a('object');
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
     });
 
-    it('should not allow you to delete an existing user as regular user', (done: Function) => {
+    it('should not be able to update protected PUBLIC resources as a user', (done: Function) => {
       chai.request(server)
-        .del('/api/users/' + users[2]._id)
+        .put('/protected/public_article')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
+        .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
-          res.body.should.be.a('object');
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
     });
 
-    it('should allow you to delete an existing user as admin', (done: Function) => {
+    it('should not be able to update protected resources anonymously', (done: Function) => {
       chai.request(server)
-        .del('/api/users/' + users[2]._id)
+        .put('/protected/protected_article')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should not be able to update protected resources as a user', (done: Function) => {
+      chai.request(server)
+        .put('/protected/456_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should be able to update protected resources as an admin', (done: Function) => {
+      chai.request(server)
+        .put('/protected/456_article')
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
-        .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
           res.body.success.should.be.true;
           done();
         });
     });
 
-    it('should allow you to delete yourself', (done: Function) => {
+    it('should be able to update protected resources as an owner', (done: Function) => {
       chai.request(server)
-        .del('/api/users/' + users[1]._id)
+        .put('/protected/johnny_article')
         .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', userToken)
+        .set('x-access-token', johnnyToken)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+  });
+
+  describe('/POST /protected/resource', () => {
+    it('should not be able to create protected PUBLIC resources anonymously', (done: Function) => {
+      chai.request(server)
+        .post('/protected/public_article')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should be able to create protected PUBLIC resources as a user', (done: Function) => {
+      chai.request(server)
+        .post('/protected/public_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
           res.body.success.should.be.true;
           done();
         });
     });
 
+    it('should not be able to create protected resources anonymously', (done: Function) => {
+      chai.request(server)
+        .post('/protected/protected_article')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should be able to create protected resources as a user', (done: Function) => {
+      chai.request(server)
+        .post('/protected/456_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+
+    it('should be able to create protected resources as an admin', (done: Function) => {
+      chai.request(server)
+        .post('/protected/456_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+
+    it('should be able to create EXISTING resources as an owner, i.e. we do not check for the existence of resources', (done: Function) => {
+      chai.request(server)
+        .post('/protected/johnny_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+  });
+
+
+  describe('/DELETE /protected/resource', () => {
+    it('should not be able to delete protected PUBLIC resources anonymously', (done: Function) => {
+      chai.request(server)
+        .del('/protected/public_article')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should not be able to delete protected PUBLIC resources as a user', (done: Function) => {
+      chai.request(server)
+        .del('/protected/public_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should not be able to delete protected resources anonymously', (done: Function) => {
+      chai.request(server)
+        .del('/protected/protected_article')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should not be able to delete protected resources as a user', (done: Function) => {
+      chai.request(server)
+        .del('/protected/456_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should be able to delete protected resources as an admin', (done: Function) => {
+      chai.request(server)
+        .del('/protected/456_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+
+    it('should be able to delete owned resources as an owner', (done: Function) => {
+      chai.request(server)
+        .del('/protected/johnny_article')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
   });
 
 

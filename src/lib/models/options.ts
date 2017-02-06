@@ -27,6 +27,8 @@ export interface INodeAuthOptions {
   signup?: string | boolean;
   /** The profile route, default /api/profile. If false, don't create it. */
   profile?: string | boolean;
+  /** The authorization route, default /api/authorizations. If false, don't create it. */
+  authorizations?: string | boolean;
   /** List of all users (only accessible to admins), default /api/users. If false, don't create it. */
   users?: string;
   /**
