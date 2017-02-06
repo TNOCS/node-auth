@@ -98,25 +98,25 @@ describe('The PolicyEnforcementPoint', () => {
     };
     // const stub = sinon.stub(response, 'status');
     const next = sinon.spy();
-    policyEnforcer(<Request> { method: 'GET' }, <any>response, <any>next);
+    policyEnforcer(<Request>{ method: 'GET' }, <any>response, <any>next);
     next.calledOnce.should.be.false;
     responseSpy.calledOnce.should.be.true;
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'GET', user: { admin: true } }, <any>response, <any>next);
+    policyEnforcer(<any>{ method: 'GET', user: { admin: true } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'DELETE', user: { admin: true } }, <any>response, <any>next);
+    policyEnforcer(<any>{ method: 'DELETE', user: { admin: true } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'DELETE', user: { admin: true }, params: { articleID: '123_article' } }, <any>response, <any>next);
+    policyEnforcer(<any>{ method: 'DELETE', user: { admin: true }, params: { articleID: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
   });
@@ -125,7 +125,7 @@ describe('The PolicyEnforcementPoint', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name);
     const responseSpy = sinon.spy();
-    const response = {
+    const blocked = {
       status(id?) {
         return {
           json: responseSpy
@@ -133,43 +133,69 @@ describe('The PolicyEnforcementPoint', () => {
       }
     };
     // const stub = sinon.stub(response, 'status');
-    const next = sinon.spy();
-    policyEnforcer(<Request> { method: 'GET' }, <any>response, <any>next);
-    next.calledOnce.should.be.false;
+    const passed = sinon.spy();
+    policyEnforcer(<Request>{ method: 'GET' }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.false;
     responseSpy.calledOnce.should.be.true;
 
-    next.reset();
+    passed.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'GET', user: { _id: '123' } }, <any>response, <any>next);
-    next.calledOnce.should.be.false;
+    policyEnforcer(<any>{ method: 'GET', user: { _id: '123' } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.false;
     responseSpy.calledOnce.should.be.true;
 
-    next.reset();
+    passed.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'GET', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>next);
-    next.calledOnce.should.be.true;
+    policyEnforcer(<any>{ method: 'GET', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
-    next.reset();
+    passed.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'PUT', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>next);
-    next.calledOnce.should.be.true;
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
 
-    next.reset();
+    passed.reset();
     responseSpy.reset();
-    policyEnforcer(<any> { method: 'PUT', user: { _id: '456' }, params: { articleID: '123_article' } }, <any>response, <any>next);
-    next.calledOnce.should.be.false;
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { articleID: ['123_article'] } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.true;
+    responseSpy.calledOnce.should.be.false;
+
+    passed.reset();
+    responseSpy.reset();
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { articleID: '123_article' } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.false;
+    responseSpy.calledOnce.should.be.true;
+  });
+
+  it('should allow authors to limit their requests.', () => {
+    const policySets = policyStore.getPolicySets();
+    const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name);
+    const responseSpy = sinon.spy();
+    const blocked = {
+      status(id?) {
+        return {
+          json: responseSpy
+        };
+      }
+    };
+    // const stub = sinon.stub(response, 'status');
+    const passed = sinon.spy();
+    passed.reset();
+    responseSpy.reset();
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { articleID: ['123_article', '456_article'] } }, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.false;
     responseSpy.calledOnce.should.be.true;
   });
 
   it('should allow you to specify your own request generating function.', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, (req) => {
-      return <PermissionRequest> { subject: {_id: '123'}, action: Action.Delete, resource: { articleID: '123_article'} };
+      return <PermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { articleID: '123_article' } };
     });
     const responseSpy = sinon.spy();
-    const response = {
+    const blocked = {
       status(id?) {
         return {
           json: responseSpy
@@ -177,9 +203,9 @@ describe('The PolicyEnforcementPoint', () => {
       }
     };
     // const stub = sinon.stub(response, 'status');
-    const next = sinon.spy();
-    policyEnforcer(<Request> {}, <any>response, <any>next);
-    next.calledOnce.should.be.true;
+    const passed = sinon.spy();
+    policyEnforcer(<Request>{}, <any>blocked, <any>passed);
+    passed.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
   });
 });

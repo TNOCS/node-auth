@@ -129,7 +129,12 @@ function matchProperties(ruleProp: string | number | string[] | number[], reqPro
     // ruleProp is an array
     if (reqProp instanceof Array) {
       // they are both arrays
-      return matchArrays(ruleProp, reqProp);
+      if (reqProp.length > 1) {
+        // You ask for more than is possible with this rule
+        return false;
+      } else {
+        return matchArrays(ruleProp, reqProp);
+      }
     } else {
       // in case the ruleProp only has one element, there might still be a match. Otherwise, fails.
       return matchArrays(ruleProp, [reqProp]);

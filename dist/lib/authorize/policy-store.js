@@ -39,7 +39,12 @@ function matchArrays(required, actual) {
 function matchProperties(ruleProp, reqProp) {
     if (ruleProp instanceof Array) {
         if (reqProp instanceof Array) {
-            return matchArrays(ruleProp, reqProp);
+            if (reqProp.length > 1) {
+                return false;
+            }
+            else {
+                return matchArrays(ruleProp, reqProp);
+            }
         }
         else {
             return matchArrays(ruleProp, [reqProp]);
