@@ -6,7 +6,11 @@ import * as morgan from 'morgan';
 import * as mongoose from 'mongoose';
 import { IUser } from '../lib/models/user';
 import { CRUD } from '../lib/models/crud';
+import { Action } from '../lib/models/action';
+import { Decision } from '../lib/models/decision';
 import { nodeAuth } from '../lib/index';
+import { initPolicyStore } from '../lib/authorize/policy-store';
+import { initPEP } from '../lib/authorize/pep';
 
 const config = require('config'); // get our config file
 export const server: Application = express();
@@ -21,7 +25,7 @@ mongoose.connect(config.database); // connect to database
 // use body parser so we can get info from POST and/or URL parameters
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
-server.use(bodyParser.json({ type: 'application/json'}));
+server.use(bodyParser.json({ type: 'application/json' }));
 
 // use morgan to log requests to the console, but don't show the log when it is test
 if (config.util.getEnv('NODE_ENV') !== 'test') {
@@ -45,15 +49,74 @@ server.use(nodeAuth(server, {
 }));
 
 server.route('/unprotected/resource')
-  .all((req, res, next) => {
-    next();
-  })
   .get((req, res, next) => {
     res.json({ success: true });
   });
 
-server.get('/protected/resource', (req, res, next) => {
-  res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false });
+const policyStore = initPolicyStore('test-policies.json', [{
+  name: 'Main policy set',
+  combinator: 'first',
+  policies: [{
+    name: 'admins rule',
+    combinator: 'first',
+    rules: [{
+      subject: { admin: true },
+      decision: Decision.Permit
+    }]
+  }, {
+    name: 'rbac',
+    combinator: 'first',
+    rules: [{
+      subject: { subscribed: true },
+      action: Action.Create,
+      resource: {
+        type: 'article'
+      },
+      decision: Decision.Permit
+    }, {
+      subject: { subscribed: true },
+      action: Action.Create,
+      resource: {
+        type: 'comment'
+      },
+      decision: Decision.Permit
+    }, {
+      subject: { email: 'john.smith@gmail.com' },
+      action: Action.Manage,
+      decision: Decision.Permit,
+      resource: {
+        articleID: ['johnny_article']
+      }
+    }, {
+      subject: { _id: '456' },
+      action: Action.Author,
+      decision: Decision.Permit,
+      resource: {
+        articleID: ['456_article']
+      }
+    }, {
+      description: 'Anyone can read public resources',
+      action: Action.Read,
+      decision: Decision.Permit,
+      resource: {
+        articleID: ['public_article']
+      }
+    }, {
+      description: 'Subscribed users can create new resources',
+      subject: {
+        subscribed: true
+      },
+      action: Action.Create,
+      decision: Decision.Permit
+    }]
+  }]
+}]);
+
+const pep = initPEP(policyStore);
+const cop = pep.getPolicyEnforcer('Main policy set');
+
+server.all('/protected/:articleID', cop, (req, res, next) => {
+  res.json({ success: true });
 });
 
 // =======================
