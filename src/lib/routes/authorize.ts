@@ -11,7 +11,7 @@ export function init(options: INodeAuthOptions) {
   // _policyStore.getPrivileges()
 }
 
-export function authorize(req: Request, res: Response) {
+export function getPrivileges(req: Request, res: Response) {
   const user: Subject = req['user'];
 
   if (!user) {

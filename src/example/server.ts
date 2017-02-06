@@ -104,6 +104,21 @@ server.use(nodeAuth(server, {
   secretKey: config.secret,
   blockUnauthenticatedUser: false, // if true, default, no unauthenticated user will pass beyond this point
   policyStore: policyStore,
+  verify: {
+    route: true,
+    baseUrl: 'www.mydomain.com/api/activate',
+    mailService: null,
+    verifyMailOptions: {
+      from: 'erik.vullings@gmail.com',
+      subject: 'Just verifying that your email is correct',
+      html: 'Hello'
+    },
+    confirmMailOptions: {
+      from: 'erik.vullings@gmail.com',
+      subject: 'Just confirming that your account is setup and good to go',
+      html: 'Yay!'
+    }
+  },
   onUserChanged: (user: IUser, req: Request, change: CRUD) => {
     // console.log(`User ${change}d:`);
     // console.log(JSON.stringify(user, null, 2));

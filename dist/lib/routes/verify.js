@@ -75,8 +75,12 @@ function sendVerificationMessage(user) {
         var URL = verificationURL + "/" + user._id.toString() + "?t=" + hash;
         var mailOptions = JSON.parse(JSON.stringify(verifyMailOptions));
         mailOptions.to = user.email;
-        mailOptions.html = mailOptions.html.replace(urlRegex, URL);
-        mailOptions.text = mailOptions.text.replace(urlRegex, URL);
+        if (mailOptions.html) {
+            mailOptions.html = mailOptions.html.replace(urlRegex, URL);
+        }
+        if (mailOptions.text) {
+            mailOptions.text = mailOptions.text.replace(urlRegex, URL);
+        }
         mailService && mailService.send(mailOptions, verificationMessageSendCallback);
     });
 }

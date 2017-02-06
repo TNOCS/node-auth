@@ -98,8 +98,8 @@ export function sendVerificationMessage(user: IUser) {
     const mailOptions = JSON.parse(JSON.stringify(verifyMailOptions)); // clone
 
     mailOptions.to = user.email;
-    mailOptions.html = mailOptions.html.replace(urlRegex, URL);
-    mailOptions.text = mailOptions.text.replace(urlRegex, URL);
+    if (mailOptions.html) { mailOptions.html = mailOptions.html.replace(urlRegex, URL); }
+    if (mailOptions.text) { mailOptions.text = mailOptions.text.replace(urlRegex, URL); }
 
     mailService && mailService.send(mailOptions, verificationMessageSendCallback);
   });

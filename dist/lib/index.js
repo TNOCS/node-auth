@@ -41,7 +41,7 @@ function getRoute(route, defaultRoute) {
         return route;
     }
     else {
-        return (route == null || !route) ? defaultRoute : null;
+        return (route == null || route) ? defaultRoute : null;
     }
 }
 function createApiRoute(apiRoutes, options) {
@@ -109,7 +109,7 @@ function createRoutes(secretKey, options) {
     var authorizationRoute = getRoute(options.authorizations, '/authorizations');
     if (authorizationRoute) {
         apiRoutes.route(authorizationRoute)
-            .get(authzRoute.authorize);
+            .get(authzRoute.getPrivileges);
     }
     var usersRoute = getRoute(options.users, '/users');
     if (usersRoute) {

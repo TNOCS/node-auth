@@ -7,7 +7,7 @@ function init(options) {
     _policyStore = options.policyStore;
 }
 exports.init = init;
-function authorize(req, res) {
+function getPrivileges(req, res) {
     var user = req['user'];
     if (!user) {
         res.status(403).json({ success: false, message: 'Service only available for authenticated users.' });
@@ -16,5 +16,5 @@ function authorize(req, res) {
         res.json({ success: true, message: _policyStore.getPrivileges(user) });
     }
 }
-exports.authorize = authorize;
+exports.getPrivileges = getPrivileges;
 //# sourceMappingURL=authorize.js.map

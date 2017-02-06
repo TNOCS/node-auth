@@ -54,7 +54,7 @@ function getRoute(route: string | boolean, defaultRoute: string) {
   if (typeof route === 'string') {
     return route;
   } else {
-    return (route == null || !route) ? defaultRoute : null;
+    return (route == null || route) ? defaultRoute : null;
   }
 }
 
@@ -147,7 +147,7 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
   const authorizationRoute = getRoute(options.authorizations, '/authorizations');
   if (authorizationRoute) {
     apiRoutes.route(authorizationRoute)
-      .get(authzRoute.authorize);
+      .get(authzRoute.getPrivileges);
   }
 
   const usersRoute = getRoute(options.users, '/users');
