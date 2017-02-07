@@ -422,6 +422,18 @@ describe('Users', () => {
         });
     });
 
+    it('should allow you to delete yourself via the profile page', (done: Function) => {
+      chai.request(server)
+        .del('/api/profile')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.body.should.be.empty;
+          done();
+        });
+    });
+
   });
 
 
