@@ -257,6 +257,31 @@ describe('Authorizations route', () => {
         });
     });
 
+    it('should block users with unknown numeric policy', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        policy: 15,
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
     it('should block users with insufficient rights', (done: Function) => {
       const newPrivilege: PrivilegeRequest = {
         policySet: 'Main policy set',

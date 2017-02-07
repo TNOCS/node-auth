@@ -49,15 +49,6 @@ function deletePrivilege(newPrivilege: PrivilegeRequest) {
   return policyEditor('delete', newPrivilege);
 }
 
-function getSubject(req: Request, res: Response) {
-  const subject: Subject = req['user'];
-  if (!subject) {
-    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
-    return null;
-  }
-  return subject;
-}
-
 function getPrivilegeRequest(req: Request, res: Response) {
   const newPrivilege: PrivilegeRequest = req['body'];
   if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
@@ -79,7 +70,6 @@ export function init(options: INodeAuthOptions) {
 
 export function getPrivileges(req: Request, res: Response) {
   const user: Subject = req['user'];
-
   if (!user) {
     res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
   } else {
@@ -88,7 +78,7 @@ export function getPrivileges(req: Request, res: Response) {
 }
 
 function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr: PrivilegeRequest) => (msg: ResponseMessage) => void) {
-  const subject = getSubject(req, res);
+  const subject: Subject = req['user'];
   if (!subject) { return; }
   const newPrivilege = getPrivilegeRequest(req, res);
   if (!newPrivilege) { return; }

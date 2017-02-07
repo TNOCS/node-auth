@@ -46,14 +46,6 @@ function deletePrivilege(newPrivilege) {
     }
     return policyEditor('delete', newPrivilege);
 }
-function getSubject(req, res) {
-    var subject = req['user'];
-    if (!subject) {
-        res.status(403).json({ success: false, message: 'Service only available for authenticated users.' });
-        return null;
-    }
-    return subject;
-}
 function getPrivilegeRequest(req, res) {
     var newPrivilege = req['body'];
     if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
@@ -81,7 +73,7 @@ function getPrivileges(req, res) {
 }
 exports.getPrivileges = getPrivileges;
 function crudPrivileges(change, req, res, handler) {
-    var subject = getSubject(req, res);
+    var subject = req['user'];
     if (!subject) {
         return;
     }
