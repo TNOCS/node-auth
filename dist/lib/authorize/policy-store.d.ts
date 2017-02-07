@@ -14,6 +14,7 @@ export interface PolicySetCollection extends PolicyBase {
     policies: PolicyBase[];
 }
 export interface PolicyStore {
+    name: string;
     getPolicySets(): {
         name: string;
         combinator: DecisionCombinator;

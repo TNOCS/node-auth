@@ -147,7 +147,8 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
   const authorizationRoute = getRoute(options.authorizations, '/authorizations');
   if (authorizationRoute) {
     apiRoutes.route(authorizationRoute)
-      .get(authzRoute.getPrivileges);
+      .get(authzRoute.getPrivileges)
+      .post(authzRoute.createPrivileges);
   }
 
   const usersRoute = getRoute(options.users, '/users');

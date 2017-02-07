@@ -1,8 +1,10 @@
 "use strict";
 var decision_1 = require('../models/decision');
-var _policyStore;
-function resolvePolicy(policyName, policyCombinator) {
-    var resolveRules = _policyStore.getRuleResolver(policyName);
+function resolvePolicy(policyStore, policyName, policyCombinator) {
+    var resolveRules = policyStore.getRuleResolver(policyName);
+    if (!resolveRules) {
+        return null;
+    }
     var isFirst = policyCombinator === 'first';
     return function (req) {
         var rules = resolveRules(req);
@@ -15,14 +17,19 @@ function resolvePolicy(policyName, policyCombinator) {
     };
 }
 function initPDP(policyStore) {
-    _policyStore = policyStore;
     return {
         getPolicyResolver: function (policySetName) {
             var policyResolvers = [];
             var policySet = policyStore.getPolicySet(policySetName);
+            if (!policySet) {
+                return null;
+            }
             var policySetCombinator = policySet.combinator;
             policySet.policies.forEach(function (p) {
-                policyResolvers.push(resolvePolicy(p.name, p.combinator));
+                var rp = resolvePolicy(policyStore, p.name, p.combinator);
+                if (rp) {
+                    policyResolvers.push(rp);
+                }
             });
             var isFirst = policySetCombinator === 'first';
             return function (req) {

@@ -9,3 +9,7 @@ export interface Rule {
     resource?: Resource;
     decision: Decision;
 }
+export interface PrivilegeRequest extends Rule {
+    policySet: string;
+    policy?: string | number;
+}

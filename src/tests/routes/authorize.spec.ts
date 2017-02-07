@@ -1,8 +1,9 @@
 process.env.NODE_ENV = 'test';
-
-import { User, IUser, IUserModel } from '../../lib/models/user';
-import { Rule } from '../../lib/models/rule';
 import * as chai from 'chai';
+import { User, IUser, IUserModel } from '../../lib/models/user';
+import { Rule, PrivilegeRequest } from '../../lib/models/rule';
+import { Decision } from '../../lib/models/decision';
+import { Action } from '../../lib/models//action';
 import { server } from '../../example/server';
 
 chai.should();
@@ -117,6 +118,187 @@ describe('Authorizations route', () => {
           const rules: Rule[] = res.body.message;
           rules[0].subject.admin.should.be.true;
           rules.length.should.be.eql(4);
+          done();
+        });
+    });
+  });
+
+  describe('/POST /api/authorizations', () => {
+    it('should block anonymous users', (done: Function) => {
+      chai.request(server)
+        .post('/api/authorizations')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users without a message body', (done: Function) => {
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with an incorrect message body', (done: Function) => {
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send({ whatever: true, interests: 'you' })
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with incomplete requests, e.g. missing policySet', (done: Function) => {
+      const newPrivilege: Rule = {
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should allow users with correct requests', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: 'johnny_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          done();
+        });
+    });
+
+    it('should block users with unknown policy sets', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Whatever policy set you can think of',
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with unknown policy', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        policy: 'pick one',
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with insufficient rights', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should allow admins to change permissions', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'jane.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: '456_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
           done();
         });
     });

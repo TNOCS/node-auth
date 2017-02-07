@@ -114,6 +114,7 @@ function initPolicyStore(name, policySets) {
     }
     var psCollection = db.getCollection('policy-sets');
     return {
+        name: name,
         getPolicySets: function () {
             var policySets = psCollection.find();
             return policySets.map(function (ps) {
@@ -131,6 +132,9 @@ function initPolicyStore(name, policySets) {
         },
         getRuleResolver: function (policyName) {
             var ruleCollection = db.getCollection(policyName);
+            if (!ruleCollection) {
+                return null;
+            }
             return function (req) {
                 return ruleCollection
                     .chain()

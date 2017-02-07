@@ -11,3 +11,21 @@ export interface Rule {
   resource?: Resource;
   decision: Decision;
 }
+
+export interface PrivilegeRequest extends Rule {
+  /**
+   * When we want to create a new rule, we need to specify in which policy set we want to create it
+   *
+   * @type {string}
+   * @memberOf Privilege
+   */
+  policySet: string;
+  /**
+   * Optionally, you can also specify to which policy it must be added.
+   * By default, this will be the last policy, so you can separate the primary (e.g. role based) policies from the more dynamic one.
+   *
+   * @type {string | number}
+   * @memberOf PrivilegeRequest
+   */
+  policy?: string | number;
+}

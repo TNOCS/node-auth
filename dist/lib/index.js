@@ -109,7 +109,8 @@ function createRoutes(secretKey, options) {
     var authorizationRoute = getRoute(options.authorizations, '/authorizations');
     if (authorizationRoute) {
         apiRoutes.route(authorizationRoute)
-            .get(authzRoute.getPrivileges);
+            .get(authzRoute.getPrivileges)
+            .post(authzRoute.createPrivileges);
     }
     var usersRoute = getRoute(options.users, '/users');
     if (usersRoute) {

@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
-// import { expect } from 'chai';
+import { expect } from 'chai';
 import { PolicyStore, initPolicyStore } from '../../lib/authorize/policy-store';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
@@ -73,6 +73,11 @@ describe('The PolicyDecisionPoint', () => {
     pdp = initPDP(policyStore);
   });
 
+  it('should deny permission when the policy set is not found.', () => {
+    const resolvePolicy = pdp.getPolicyResolver('Tenth policy set');
+    expect(resolvePolicy).to.be.null;
+  });
+
   it('should deny permission when the policy set has no match.', () => {
     const resolvePolicy = pdp.getPolicyResolver('Second policy set');
     let permit = resolvePolicy({});
@@ -92,7 +97,5 @@ describe('The PolicyDecisionPoint', () => {
     permit = resolvePolicy({ subject: { subscribed: true }, action: Action.Delete, resource: { type: 'comment' }});
     permit.should.be.false;
   });
-
-
 
 });

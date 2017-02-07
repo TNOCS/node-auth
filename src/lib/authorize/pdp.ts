@@ -3,8 +3,6 @@ import { DecisionCombinator } from '../models/decision-combinator';
 import { PolicyStore } from '../../lib/authorize/policy-store';
 import { PermissionRequest } from '../models/decision';
 
-let _policyStore: PolicyStore;
-
 export interface PolicyDecisionPoint {
   getPolicyResolver(policySetName: string): (req: PermissionRequest) => boolean;
 }
@@ -17,8 +15,9 @@ export interface PolicyDecisionPoint {
  * @param {DecisionCombinator} policyCombinator
  * @returns
  */
-function resolvePolicy(policyName: string, policyCombinator: DecisionCombinator) {
-  const resolveRules = _policyStore.getRuleResolver(policyName);
+function resolvePolicy(policyStore: PolicyStore, policyName: string, policyCombinator: DecisionCombinator) {
+  const resolveRules = policyStore.getRuleResolver(policyName);
+  if (!resolveRules) { return null; }
   const isFirst = policyCombinator === 'first';
   return (req: PermissionRequest) => {
     const rules = resolveRules(req);
@@ -41,15 +40,16 @@ function resolvePolicy(policyName: string, policyCombinator: DecisionCombinator)
  * @returns
  */
 export function initPDP(policyStore: PolicyStore): PolicyDecisionPoint {
-  _policyStore = policyStore;
   return {
     /** A policy resolver helps you resolve permission requests. */
     getPolicyResolver(policySetName: string) {
       const policyResolvers: Array<(req: PermissionRequest) => boolean> = [];
       const policySet = policyStore.getPolicySet(policySetName);
+      if (!policySet) { return null; }
       const policySetCombinator = policySet.combinator;
       policySet.policies.forEach(p => {
-        policyResolvers.push(resolvePolicy(p.name, p.combinator));
+        const rp = resolvePolicy(policyStore, p.name, p.combinator);
+        if (rp) { policyResolvers.push(rp); }
       });
       const isFirst = policySetCombinator === 'first';
       return (req: PermissionRequest) => {
