@@ -13,7 +13,7 @@ chai.use(require('chai-http'));
  * The authorization route allows users to get their rights based on their profile.
  * It is also used to add or change authorization rules.
  */
-describe.only('Authorizations route', () => {
+describe('Authorizations route', () => {
   let adminToken: string;
   let johnnyToken: string;
   let adminUser: IUserModel;

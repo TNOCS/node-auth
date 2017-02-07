@@ -1,6 +1,39 @@
 "use strict";
 var action_1 = require('../models/action');
 var pdp_1 = require('./pdp');
+function addExtraAttributesToRequest(extraAttributes, req) {
+    if (!extraAttributes) {
+        return;
+    }
+    var subject = extraAttributes.subject;
+    if (subject) {
+        if (!req.subject) {
+            req.subject = {};
+        }
+        for (var key in subject) {
+            if (!subject.hasOwnProperty(key)) {
+                continue;
+            }
+            req.subject[key] = subject[key];
+        }
+    }
+    var resource = extraAttributes.resource;
+    if (resource) {
+        if (!req.resource) {
+            req.resource = {};
+        }
+        for (var key in resource) {
+            if (!resource.hasOwnProperty(key)) {
+                continue;
+            }
+            req.resource[key] = resource[key];
+        }
+    }
+    var action = extraAttributes.action;
+    if (action) {
+        req.action |= action;
+    }
+}
 function defaultPermissionRequest(req) {
     var action;
     switch (req.method.toLowerCase()) {
@@ -25,7 +58,7 @@ function defaultPermissionRequest(req) {
 function initPEP(policyStore) {
     var pdp = pdp_1.initPDP(policyStore);
     return {
-        getPolicyEnforcer: function (policySetName, generatePermissionRequest) {
+        getPolicyEnforcer: function (policySetName, extraRequestAttributes, generatePermissionRequest) {
             var policyResolver = pdp.getPolicyResolver(policySetName);
             if (generatePermissionRequest) {
                 return function (req, res, next) {
@@ -36,6 +69,7 @@ function initPEP(policyStore) {
             else {
                 return function (req, res, next) {
                     var permissionRequest = req['req'] || defaultPermissionRequest(req);
+                    addExtraAttributesToRequest(extraRequestAttributes, permissionRequest);
                     return policyResolver(permissionRequest) ? next() : res.status(403).json({ success: false, message: 'Access denied' });
                 };
             }

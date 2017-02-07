@@ -189,9 +189,30 @@ describe('The PolicyEnforcementPoint', () => {
     blocked.calledOnce.should.be.true;
   });
 
+  it('should allow you to add custom properties to your request.', () => {
+    const policySets = policyStore.getPolicySets();
+    const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, {
+      subject: { subscribed: true },
+      action: Action.Update,
+      resource: { articleID: '123_article' }
+    });
+    const blocked = sinon.spy();
+    const response = {
+      status(id?) {
+        return {
+          json: blocked
+        };
+      }
+    };
+    const passed = sinon.spy();
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' } }, <any>response, <any>passed);
+    passed.calledOnce.should.be.true;
+    blocked.calledOnce.should.be.false;
+  });
+
   it('should allow you to specify your own request generating function.', () => {
     const policySets = policyStore.getPolicySets();
-    const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, (req) => {
+    const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, null, (req) => {
       return <PermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { articleID: '123_article' } };
     });
     const blocked = sinon.spy();

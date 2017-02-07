@@ -1,11 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import { PolicyStore } from '../authorize/policy-store';
 import { Action } from '../models/action';
+import { BaseRule } from '../models/rule';
 import { PermissionRequest } from '../models/decision';
 import { initPDP } from './pdp';
 
 export interface PolicyEnforcementPoint {
-  getPolicyEnforcer(policySetName: string, generatePermissionRequest?: (req: Request) => PermissionRequest): (req: Request, res: Response, next: NextFunction) => void;
+  getPolicyEnforcer(policySetName: string, extraRequestAttributes?: BaseRule, generatePermissionRequest?: (req: Request) => PermissionRequest): (req: Request, res: Response, next: NextFunction) => void;
+}
+
+function addExtraAttributesToRequest(extraAttributes: BaseRule, req: PermissionRequest) {
+  if (!extraAttributes) { return; }
+  const subject = extraAttributes.subject;
+  if (subject) {
+    if (!req.subject) { req.subject = {}; }
+    for (let key in subject) {
+      if (!subject.hasOwnProperty(key)) { continue; }
+      req.subject[key] = subject[key];
+    }
+  }
+  const resource = extraAttributes.resource;
+  if (resource) {
+    if (!req.resource) { req.resource = {}; }
+    for (let key in resource) {
+      if (!resource.hasOwnProperty(key)) { continue; }
+      req.resource[key] = resource[key];
+    }
+  }
+  const action = extraAttributes.action;
+  if (action) {
+    req.action |= action;
+  }
 }
 
 /**
@@ -42,7 +67,7 @@ function defaultPermissionRequest(req: Request) {
 export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
   const pdp = initPDP(policyStore);
   return {
-    getPolicyEnforcer(policySetName: string, generatePermissionRequest?: (req: Request) => PermissionRequest) {
+    getPolicyEnforcer(policySetName: string, extraRequestAttributes?: BaseRule, generatePermissionRequest?: (req: Request) => PermissionRequest) {
       const policyResolver = pdp.getPolicyResolver(policySetName);
       if (generatePermissionRequest) {
         return (req, res, next) => {
@@ -52,6 +77,7 @@ export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
       } else {
         return (req, res, next) => {
           const permissionRequest = req['req'] || defaultPermissionRequest(req);
+          addExtraAttributesToRequest(extraRequestAttributes, permissionRequest);
           return policyResolver(permissionRequest) ? next() : res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Access denied' });
         };
       }
