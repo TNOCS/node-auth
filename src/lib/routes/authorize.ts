@@ -4,6 +4,7 @@ import { PolicyStore } from '../authorize/policy-store';
 import { PolicyDecisionPoint, initPDP } from '../authorize/pdp';
 import { INodeAuthOptions } from '../models/options';
 import { PrivilegeRequest } from '../models/rule';
+import { CRUD } from '../models/crud';
 import { Action } from '../models/action';
 import { ResponseMessage } from '../models/response-message';
 
@@ -86,70 +87,68 @@ export function getPrivileges(req: Request, res: Response) {
   }
 }
 
-export function createPrivileges(req: Request, res: Response) {
+function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr: PrivilegeRequest) => (msg: ResponseMessage) => void) {
   const subject = getSubject(req, res);
   if (!subject) { return; }
   const newPrivilege = getPrivilegeRequest(req, res);
   if (!newPrivilege) { return; }
-  checkPermission(subject, newPrivilege, (msg) => {
-    if (msg.success) {
-      const rule = createPrivilege(newPrivilege);
-      if (rule) {
-        res.status(HTTPStatusCodes.CREATED).json({ success: true, message: rule });
+  if (change !== 'create' && !newPrivilege.hasOwnProperty('meta')) {
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+    return;
+  }
+  checkPermission(subject, newPrivilege, handler(newPrivilege));
+}
+
+export function createPrivileges(req: Request, res: Response) {
+  const handler = (newPrivilege: PrivilegeRequest) => {
+    return (msg: ResponseMessage) => {
+      if (msg.success) {
+        const rule = createPrivilege(newPrivilege);
+        if (rule) {
+          res.status(HTTPStatusCodes.CREATED).json({ success: true, message: rule });
+        } else {
+          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        }
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
-    } else {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
-    }
-  });
+    };
+  };
+  crudPrivileges('create', req, res, handler);
 }
 
 export function updatePrivileges(req: Request, res: Response) {
-  const subject = getSubject(req, res);
-  if (!subject) { return; }
-  const newPrivilege = getPrivilegeRequest(req, res);
-  if (!newPrivilege) { return; }
-  if (!newPrivilege.hasOwnProperty('meta')) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json( {success: false, message: 'Metadata is missing, original rule should be returned'});
-    return;
-  }
-  checkPermission(subject, newPrivilege, (msg) => {
-    if (msg.success) {
-      const rule = updatePrivilege(newPrivilege);
-      if (rule) {
-        res.json({ success: true, message: rule });
+  const handler = (newPrivilege: PrivilegeRequest) => {
+    return (msg: ResponseMessage) => {
+      if (msg.success) {
+        const rule = updatePrivilege(newPrivilege);
+        if (rule) {
+          res.json({ success: true, message: rule });
+        } else {
+          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        }
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
-    } else {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
-    }
-  });
+    };
+  };
+  crudPrivileges('update', req, res, handler);
 }
 
 export function deletePrivileges(req: Request, res: Response) {
-  const subject = getSubject(req, res);
-  if (!subject) { return; }
-  const newPrivilege = getPrivilegeRequest(req, res);
-  if (!newPrivilege) { return; }
-  if (!newPrivilege.hasOwnProperty('meta')) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json( {success: false, message: 'Metadata is missing, original rule should be returned'});
-    return;
-  }
-  checkPermission(subject, newPrivilege, (msg) => {
-    if (msg.success) {
-      const rule = deletePrivilege(newPrivilege);
-      if (!rule) {
-        res.status(HTTPStatusCodes.NO_CONTENT).json({ success: true, message: rule });
+  const handler = (newPrivilege: PrivilegeRequest) => {
+    return (msg: ResponseMessage) => {
+      if (msg.success) {
+        const rule = deletePrivilege(newPrivilege);
+        if (!rule) {
+          res.status(HTTPStatusCodes.NO_CONTENT).end();
+        } else {
+          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        }
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
-    } else {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
-    }
-  });
+    };
+  };
+  crudPrivileges('delete', req, res, handler);
 }
-
-
-

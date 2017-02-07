@@ -80,7 +80,7 @@ function getPrivileges(req, res) {
     }
 }
 exports.getPrivileges = getPrivileges;
-function createPrivileges(req, res) {
+function crudPrivileges(change, req, res, handler) {
     var subject = getSubject(req, res);
     if (!subject) {
         return;
@@ -89,78 +89,70 @@ function createPrivileges(req, res) {
     if (!newPrivilege) {
         return;
     }
-    checkPermission(subject, newPrivilege, function (msg) {
-        if (msg.success) {
-            var rule = createPrivilege(newPrivilege);
-            if (rule) {
-                res.status(201).json({ success: true, message: rule });
+    if (change !== 'create' && !newPrivilege.hasOwnProperty('meta')) {
+        res.status(401).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+        return;
+    }
+    checkPermission(subject, newPrivilege, handler(newPrivilege));
+}
+function createPrivileges(req, res) {
+    var handler = function (newPrivilege) {
+        return function (msg) {
+            if (msg.success) {
+                var rule = createPrivilege(newPrivilege);
+                if (rule) {
+                    res.status(201).json({ success: true, message: rule });
+                }
+                else {
+                    res.status(401).json(msg);
+                }
             }
             else {
                 res.status(401).json(msg);
             }
-        }
-        else {
-            res.status(401).json(msg);
-        }
-    });
+        };
+    };
+    crudPrivileges('create', req, res, handler);
 }
 exports.createPrivileges = createPrivileges;
 function updatePrivileges(req, res) {
-    var subject = getSubject(req, res);
-    if (!subject) {
-        return;
-    }
-    var newPrivilege = getPrivilegeRequest(req, res);
-    if (!newPrivilege) {
-        return;
-    }
-    if (!newPrivilege.hasOwnProperty('meta')) {
-        res.status(401).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
-        return;
-    }
-    checkPermission(subject, newPrivilege, function (msg) {
-        if (msg.success) {
-            var rule = updatePrivilege(newPrivilege);
-            if (rule) {
-                res.json({ success: true, message: rule });
+    var handler = function (newPrivilege) {
+        return function (msg) {
+            if (msg.success) {
+                var rule = updatePrivilege(newPrivilege);
+                if (rule) {
+                    res.json({ success: true, message: rule });
+                }
+                else {
+                    res.status(401).json(msg);
+                }
             }
             else {
                 res.status(401).json(msg);
             }
-        }
-        else {
-            res.status(401).json(msg);
-        }
-    });
+        };
+    };
+    crudPrivileges('update', req, res, handler);
 }
 exports.updatePrivileges = updatePrivileges;
 function deletePrivileges(req, res) {
-    var subject = getSubject(req, res);
-    if (!subject) {
-        return;
-    }
-    var newPrivilege = getPrivilegeRequest(req, res);
-    if (!newPrivilege) {
-        return;
-    }
-    if (!newPrivilege.hasOwnProperty('meta')) {
-        res.status(401).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
-        return;
-    }
-    checkPermission(subject, newPrivilege, function (msg) {
-        if (msg.success) {
-            var rule = deletePrivilege(newPrivilege);
-            if (!rule) {
-                res.status(204).json({ success: true, message: rule });
+    var handler = function (newPrivilege) {
+        return function (msg) {
+            if (msg.success) {
+                var rule = deletePrivilege(newPrivilege);
+                if (!rule) {
+                    res.status(204).end();
+                }
+                else {
+                    res.status(401).json(msg);
+                }
             }
             else {
                 res.status(401).json(msg);
             }
-        }
-        else {
-            res.status(401).json(msg);
-        }
-    });
+        };
+    };
+    crudPrivileges('delete', req, res, handler);
 }
 exports.deletePrivileges = deletePrivileges;
 //# sourceMappingURL=authorize.js.map

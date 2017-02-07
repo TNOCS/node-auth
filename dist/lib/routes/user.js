@@ -161,7 +161,7 @@ function deleteUser(req, res) {
             res.status(500).json({ success: false, message: 'Internal server error. Please try again later.' });
             return;
         }
-        res.status(204).json({ success: true });
+        res.status(204).end();
     });
 }
 exports.deleteUser = deleteUser;

@@ -261,7 +261,7 @@ export function deleteUser(req: Request, res: Response) {
       res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
       return;
     }
-    res.status(HTTPStatusCodes.NO_CONTENT).json({ success: true });
+    res.status(HTTPStatusCodes.NO_CONTENT).end();
   });
 }
 
