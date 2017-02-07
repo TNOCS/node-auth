@@ -28,6 +28,7 @@ export interface PolicySetCollection extends PolicyBase {
 }
 
 export interface PolicyStore {
+  name: string;
   /** Return all policy sets */
   getPolicySets(): {
     name: string;
@@ -221,6 +222,7 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
   }
   const psCollection = db.getCollection<PolicySetCollection>('policy-sets');
   return {
+    name: name,
     getPolicySets() {
       const policySets = psCollection.find();
       return policySets.map(ps => {
@@ -238,6 +240,7 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
     },
     getRuleResolver(policyName: string) {
       const ruleCollection = db.getCollection<Rule>(policyName);
+      if (!ruleCollection) { return null; }
       return (req: PermissionRequest) => {
         return ruleCollection
           .chain()

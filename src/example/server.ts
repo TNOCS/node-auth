@@ -28,7 +28,7 @@ server.use(bodyParser.json());
 server.use(bodyParser.json({ type: 'application/json' }));
 
 // Load of create a policy store
-const policyStore = initPolicyStore('test-policies.json', [{
+const policyStore = initPolicyStore('example-policies.json', [{
   name: 'Main policy set',
   combinator: 'first',
   policies: [{
