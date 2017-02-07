@@ -110,6 +110,8 @@ function createRoutes(secretKey, options) {
     if (authorizationRoute) {
         apiRoutes.route(authorizationRoute)
             .get(authzRoute.getPrivileges)
+            .put(authzRoute.updatePrivileges)
+            .delete(authzRoute.deletePrivileges)
             .post(authzRoute.createPrivileges);
     }
     var usersRoute = getRoute(options.users, '/users');

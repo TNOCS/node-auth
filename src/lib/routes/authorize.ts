@@ -32,8 +32,38 @@ function getPolicyEditor(newPrivilege: PrivilegeRequest) {
 
 function createPrivilege(newPrivilege: PrivilegeRequest) {
   const policyEditor = getPolicyEditor(newPrivilege);
-  if (!policyEditor) { return false; }
-  return policyEditor('add', newPrivilege) ? true : false;
+  if (!policyEditor) { return null; }
+  return policyEditor('add', newPrivilege);
+}
+
+function updatePrivilege(newPrivilege: PrivilegeRequest) {
+  const policyEditor = getPolicyEditor(newPrivilege);
+  if (!policyEditor) { return null; }
+  return policyEditor('update', newPrivilege);
+}
+
+function deletePrivilege(newPrivilege: PrivilegeRequest) {
+  const policyEditor = getPolicyEditor(newPrivilege);
+  if (!policyEditor) { return null; }
+  return policyEditor('delete', newPrivilege);
+}
+
+function getSubject(req: Request, res: Response) {
+  const subject: Subject = req['user'];
+  if (!subject) {
+    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
+    return null;
+  }
+  return subject;
+}
+
+function getPrivilegeRequest(req: Request, res: Response) {
+  const newPrivilege: PrivilegeRequest = req['body'];
+  if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
+    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
+    return null;
+  }
+  return newPrivilege;
 }
 
 /**
@@ -57,20 +87,69 @@ export function getPrivileges(req: Request, res: Response) {
 }
 
 export function createPrivileges(req: Request, res: Response) {
-  const subject: Subject = req['user'];
-  const newPrivilege: PrivilegeRequest = req['body'];
-  if (!subject) {
-    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
-  } else if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
-    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
-  } else {
-    checkPermission(subject, newPrivilege, (msg) => {
-      if (msg.success && createPrivilege(newPrivilege)) {
-        res.json(msg);
+  const subject = getSubject(req, res);
+  if (!subject) { return; }
+  const newPrivilege = getPrivilegeRequest(req, res);
+  if (!newPrivilege) { return; }
+  checkPermission(subject, newPrivilege, (msg) => {
+    if (msg.success) {
+      const rule = createPrivilege(newPrivilege);
+      if (rule) {
+        res.json({ success: true, message: rule });
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
-    });
-  }
+    } else {
+      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+    }
+  });
 }
+
+export function updatePrivileges(req: Request, res: Response) {
+  const subject = getSubject(req, res);
+  if (!subject) { return; }
+  const newPrivilege = getPrivilegeRequest(req, res);
+  if (!newPrivilege) { return; }
+  if (!newPrivilege.hasOwnProperty('meta')) {
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json( {success: false, message: 'Metadata is missing, original rule should be returned'});
+    return;
+  }
+  checkPermission(subject, newPrivilege, (msg) => {
+    if (msg.success) {
+      const rule = updatePrivilege(newPrivilege);
+      if (rule) {
+        res.json({ success: true, message: rule });
+      } else {
+        res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+      }
+    } else {
+      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+    }
+  });
+}
+
+export function deletePrivileges(req: Request, res: Response) {
+  const subject = getSubject(req, res);
+  if (!subject) { return; }
+  const newPrivilege = getPrivilegeRequest(req, res);
+  if (!newPrivilege) { return; }
+  if (!newPrivilege.hasOwnProperty('meta')) {
+    res.status(HTTPStatusCodes.UNAUTHORIZED).json( {success: false, message: 'Metadata is missing, original rule should be returned'});
+    return;
+  }
+  checkPermission(subject, newPrivilege, (msg) => {
+    if (msg.success) {
+      const rule = deletePrivilege(newPrivilege);
+      if (!rule) {
+        res.json({ success: true, message: rule });
+      } else {
+        res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+      }
+    } else {
+      res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+    }
+  });
+}
+
+
 

@@ -148,6 +148,8 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
   if (authorizationRoute) {
     apiRoutes.route(authorizationRoute)
       .get(authzRoute.getPrivileges)
+      .put(authzRoute.updatePrivileges)
+      .delete(authzRoute.deletePrivileges)
       .post(authzRoute.createPrivileges);
   }
 

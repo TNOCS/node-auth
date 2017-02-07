@@ -13,13 +13,15 @@ chai.use(require('chai-http'));
  * The authorization route allows users to get their rights based on their profile.
  * It is also used to add or change authorization rules.
  */
-describe('Authorizations route', () => {
+describe.only('Authorizations route', () => {
   let adminToken: string;
   let johnnyToken: string;
   let adminUser: IUserModel;
   let regularUser: IUserModel;
   let verifiedUser: IUserModel;
   let users: IUser[] = [];
+  let newRule: Rule;
+
   /**
    * Before we start the tests, we empty the database and
    * - create an admin
@@ -296,6 +298,134 @@ describe('Authorizations route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          newRule = res.body.message;
+          done();
+        });
+    });
+  });
+
+  describe('/PUT /api/authorizations', () => {
+    it('should block anonymous users', (done: Function) => {
+      chai.request(server)
+        .put('/api/authorizations')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users without body', (done: Function) => {
+      chai.request(server)
+        .put('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with incorrect request, i.e. missing metadata', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'janette.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: 'johnny_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .put('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should allow users with correct request and permissions', (done: Function) => {
+      const newEmail = 'janette.doe@gmail.com';
+      newRule.subject.email = newEmail;
+      chai.request(server)
+        .put('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .send(newRule)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          newRule = res.body.message;
+          newRule.subject.email.should.be.eql(newEmail);
+          done();
+        });
+    });
+  });
+
+
+  describe('/DELETE /api/authorizations', () => {
+    it('should block anonymous users', (done: Function) => {
+      chai.request(server)
+        .del('/api/authorizations')
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users without body', (done: Function) => {
+      chai.request(server)
+        .del('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should block users with incorrect request, i.e. missing metadata', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'janette.doe@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: 'johnny_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .del('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.body.success.should.be.false;
+          done();
+        });
+    });
+
+    it('should allow users with correct request and permissions', (done: Function) => {
+      chai.request(server)
+        .del('/api/authorizations')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .send(newRule)
         .end((err, res) => {
           res.should.have.status(HTTPStatusCodes.OK);
           res.body.success.should.be.true;

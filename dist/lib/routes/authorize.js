@@ -28,9 +28,39 @@ function getPolicyEditor(newPrivilege) {
 function createPrivilege(newPrivilege) {
     var policyEditor = getPolicyEditor(newPrivilege);
     if (!policyEditor) {
-        return false;
+        return null;
     }
-    return policyEditor('add', newPrivilege) ? true : false;
+    return policyEditor('add', newPrivilege);
+}
+function updatePrivilege(newPrivilege) {
+    var policyEditor = getPolicyEditor(newPrivilege);
+    if (!policyEditor) {
+        return null;
+    }
+    return policyEditor('update', newPrivilege);
+}
+function deletePrivilege(newPrivilege) {
+    var policyEditor = getPolicyEditor(newPrivilege);
+    if (!policyEditor) {
+        return null;
+    }
+    return policyEditor('delete', newPrivilege);
+}
+function getSubject(req, res) {
+    var subject = req['user'];
+    if (!subject) {
+        res.status(403).json({ success: false, message: 'Service only available for authenticated users.' });
+        return null;
+    }
+    return subject;
+}
+function getPrivilegeRequest(req, res) {
+    var newPrivilege = req['body'];
+    if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
+        res.status(403).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
+        return null;
+    }
+    return newPrivilege;
 }
 function init(options) {
     if (!options.policyStore) {
@@ -51,24 +81,86 @@ function getPrivileges(req, res) {
 }
 exports.getPrivileges = getPrivileges;
 function createPrivileges(req, res) {
-    var subject = req['user'];
-    var newPrivilege = req['body'];
+    var subject = getSubject(req, res);
     if (!subject) {
-        res.status(403).json({ success: false, message: 'Service only available for authenticated users.' });
+        return;
     }
-    else if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
-        res.status(403).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
+    var newPrivilege = getPrivilegeRequest(req, res);
+    if (!newPrivilege) {
+        return;
     }
-    else {
-        checkPermission(subject, newPrivilege, function (msg) {
-            if (msg.success && createPrivilege(newPrivilege)) {
-                res.json(msg);
+    checkPermission(subject, newPrivilege, function (msg) {
+        if (msg.success) {
+            var rule = createPrivilege(newPrivilege);
+            if (rule) {
+                res.json({ success: true, message: rule });
             }
             else {
                 res.status(401).json(msg);
             }
-        });
-    }
+        }
+        else {
+            res.status(401).json(msg);
+        }
+    });
 }
 exports.createPrivileges = createPrivileges;
+function updatePrivileges(req, res) {
+    var subject = getSubject(req, res);
+    if (!subject) {
+        return;
+    }
+    var newPrivilege = getPrivilegeRequest(req, res);
+    if (!newPrivilege) {
+        return;
+    }
+    if (!newPrivilege.hasOwnProperty('meta')) {
+        res.status(401).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+        return;
+    }
+    checkPermission(subject, newPrivilege, function (msg) {
+        if (msg.success) {
+            var rule = updatePrivilege(newPrivilege);
+            if (rule) {
+                res.json({ success: true, message: rule });
+            }
+            else {
+                res.status(401).json(msg);
+            }
+        }
+        else {
+            res.status(401).json(msg);
+        }
+    });
+}
+exports.updatePrivileges = updatePrivileges;
+function deletePrivileges(req, res) {
+    var subject = getSubject(req, res);
+    if (!subject) {
+        return;
+    }
+    var newPrivilege = getPrivilegeRequest(req, res);
+    if (!newPrivilege) {
+        return;
+    }
+    if (!newPrivilege.hasOwnProperty('meta')) {
+        res.status(401).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+        return;
+    }
+    checkPermission(subject, newPrivilege, function (msg) {
+        if (msg.success) {
+            var rule = deletePrivilege(newPrivilege);
+            if (!rule) {
+                res.json({ success: true, message: rule });
+            }
+            else {
+                res.status(401).json(msg);
+            }
+        }
+        else {
+            res.status(401).json(msg);
+        }
+    });
+}
+exports.deletePrivileges = deletePrivileges;
 //# sourceMappingURL=authorize.js.map
