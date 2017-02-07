@@ -189,7 +189,7 @@ describe('The PolicyEnforcementPoint', () => {
     blocked.calledOnce.should.be.true;
   });
 
-  it('should allow you to add custom properties to your request.', () => {
+  it('should allow you to add custom properties to your PUT request.', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, {
       subject: { subscribed: true },
@@ -206,6 +206,26 @@ describe('The PolicyEnforcementPoint', () => {
     };
     const passed = sinon.spy();
     policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' } }, <any>response, <any>passed);
+    passed.calledOnce.should.be.true;
+    blocked.calledOnce.should.be.false;
+  });
+
+  it('should allow you to add custom properties to your POST request.', () => {
+    const policySets = policyStore.getPolicySets();
+    const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, {
+      subject: { subscribed: true },
+      resource: { type: 'article' }
+    });
+    const blocked = sinon.spy();
+    const response = {
+      status(id?) {
+        return {
+          json: blocked
+        };
+      }
+    };
+    const passed = sinon.spy();
+    policyEnforcer(<any>{ method: 'POST', user: { _id: '123' } }, <any>response, <any>passed);
     passed.calledOnce.should.be.true;
     blocked.calledOnce.should.be.false;
   });

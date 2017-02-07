@@ -57,9 +57,6 @@ function defaultPermissionRequest(req: Request) {
     case 'delete':
       action = Action.Delete;
       break;
-    default:
-      action = Action.None;
-      break;
   }
   return <PermissionRequest> { subject: req['user'], action: action, resource: req.params };
 }
