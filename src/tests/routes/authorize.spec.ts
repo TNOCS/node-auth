@@ -202,7 +202,7 @@ describe('Authorizations route', () => {
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(HTTPStatusCodes.CREATED);
           res.body.success.should.be.true;
           done();
         });
@@ -299,7 +299,7 @@ describe('Authorizations route', () => {
         .set('x-access-token', adminToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(HTTPStatusCodes.CREATED);
           res.body.success.should.be.true;
           newRule = res.body.message;
           done();
@@ -427,8 +427,7 @@ describe('Authorizations route', () => {
         .set('x-access-token', adminToken)
         .send(newRule)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.success.should.be.true;
+          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
           done();
         });
     });

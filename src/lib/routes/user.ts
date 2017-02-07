@@ -105,7 +105,7 @@ function saveUser(user: IUserModel, req: Request, res: Response) {
     // log('User saved successfully');
     const json = <IUser> user.toJSON();
     delete json.password;
-    return res.json( { user: json });
+    return res.status(HTTPStatusCodes.CREATED).json( { user: json });
   });
 }
 
@@ -261,7 +261,7 @@ export function deleteUser(req: Request, res: Response) {
       res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
       return;
     }
-    res.json({ success: true });
+    res.status(HTTPStatusCodes.NO_CONTENT).json({ success: true });
   });
 }
 

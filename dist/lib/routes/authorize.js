@@ -93,7 +93,7 @@ function createPrivileges(req, res) {
         if (msg.success) {
             var rule = createPrivilege(newPrivilege);
             if (rule) {
-                res.json({ success: true, message: rule });
+                res.status(201).json({ success: true, message: rule });
             }
             else {
                 res.status(401).json(msg);
@@ -151,7 +151,7 @@ function deletePrivileges(req, res) {
         if (msg.success) {
             var rule = deletePrivilege(newPrivilege);
             if (!rule) {
-                res.json({ success: true, message: rule });
+                res.status(204).json({ success: true, message: rule });
             }
             else {
                 res.status(401).json(msg);

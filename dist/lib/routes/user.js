@@ -59,7 +59,7 @@ function saveUser(user, req, res) {
         }
         var json = user.toJSON();
         delete json.password;
-        return res.json({ user: json });
+        return res.status(201).json({ user: json });
     });
 }
 function createNewUser(req, res) {
@@ -161,7 +161,7 @@ function deleteUser(req, res) {
             res.status(500).json({ success: false, message: 'Internal server error. Please try again later.' });
             return;
         }
-        res.json({ success: true });
+        res.status(204).json({ success: true });
     });
 }
 exports.deleteUser = deleteUser;

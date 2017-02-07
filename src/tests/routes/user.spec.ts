@@ -165,7 +165,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .send({ email: email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(HTTPStatusCodes.CREATED);
           res.body.should.be.a('object');
           res.body.user.email.should.be.eql(email);
           done();
@@ -236,7 +236,7 @@ describe('Users', () => {
         .set('x-access-token', adminToken)
         .send({ email: email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(HTTPStatusCodes.CREATED);
           res.body.should.be.a('object');
           res.body.user.email.should.be.eql(email.toLowerCase());
           done();
@@ -404,9 +404,8 @@ describe('Users', () => {
         .set('x-access-token', adminToken)
         .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.success.should.be.true;
+          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.body.should.be.empty;
           done();
         });
     });
@@ -417,9 +416,8 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
-          res.body.should.be.a('object');
-          res.body.success.should.be.true;
+          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.body.should.be.empty;
           done();
         });
     });

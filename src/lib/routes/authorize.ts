@@ -95,7 +95,7 @@ export function createPrivileges(req: Request, res: Response) {
     if (msg.success) {
       const rule = createPrivilege(newPrivilege);
       if (rule) {
-        res.json({ success: true, message: rule });
+        res.status(HTTPStatusCodes.CREATED).json({ success: true, message: rule });
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
@@ -141,7 +141,7 @@ export function deletePrivileges(req: Request, res: Response) {
     if (msg.success) {
       const rule = deletePrivilege(newPrivilege);
       if (!rule) {
-        res.json({ success: true, message: rule });
+        res.status(HTTPStatusCodes.NO_CONTENT).json({ success: true, message: rule });
       } else {
         res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
       }
