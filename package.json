@@ -1,6 +1,6 @@
 {
   "name": "node_auth",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
   "main": "./dist/lib/index.js",
   "scripts": {
