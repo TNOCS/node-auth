@@ -128,7 +128,7 @@ function matchArrays(required: any[], actual: any[]) {
  * @param {(string | number | string[] | number[])} reqProp
  * @returns
  */
-function matchProperties(ruleProp: string | number | string[] | number[], reqProp: string | number | string[] | number[]) {
+function matchProperties(ruleProp: boolean | string | number | string[] | number[], reqProp: boolean | string | number | string[] | number[]) {
   if (ruleProp instanceof Array) {
     // ruleProp is an array
     if (reqProp instanceof Array) {
