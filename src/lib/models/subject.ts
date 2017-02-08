@@ -18,7 +18,7 @@ export interface Subject {
   /** Timestamp the account was created */
   createdAt?: Date;
   /** Role the user has */
-  role?: string[];
+  role?: string | string[];
   /**
    * Data object, to store application specific user data.
    * Typically, a developer would extend the IUser interface to specify the data properties in IMyAppUser.

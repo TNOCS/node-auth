@@ -71,14 +71,14 @@ const policyStore = initPolicyStore('example-policies.json', [{
         articleID: ['456_article']
       }
     }, {
-      description: 'Anyone can read public resources',
+      desc: 'Anyone can read public resources',
       action: Action.Read,
       decision: Decision.Permit,
       resource: {
         articleID: ['public_article']
       }
     }, {
-      description: 'Subscribed users can create new resources',
+      desc: 'Subscribed users can create new resources',
       subject: {
         subscribed: true
       },

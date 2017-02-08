@@ -5,7 +5,7 @@ import { Action } from './action';
 import { Decision } from './decision';
 
 export interface BaseRule {
-  description?: string;
+  desc?: string;
   subject?: Subject;
   action?: Action;
   resource?: Resource;
