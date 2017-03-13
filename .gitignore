@@ -38,6 +38,5 @@ jspm_packages
 
 # NODE-AUTH
 typings
-
 dist
 test-policies.json
