@@ -34,11 +34,14 @@ jspm_packages
 .node_repl_history
 
 # NODE-AUTH
+.vscode
+config
+coverage
 typings
+.tslint
 .travis.yml
 .gitignore
 tslint.json
-typings.json
 tsconfig.json
 test-policies.json
 src

@@ -1,6 +1,6 @@
 {
   "name": "node_auth",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
   "main": "./dist/lib/index.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "mongoose-mock": "^0.4.0",
     "proxyquire": "^1.7.10",
     "sinon": "^1.17.7",
-    "typescript": "^2.1.5",
+    "typescript": "^2.2.1",
     "typings": "^2.1.0"
   },
   "dependencies": {
