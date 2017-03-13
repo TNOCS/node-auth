@@ -38,10 +38,8 @@ jspm_packages
 config
 coverage
 typings
-.tslint
 .travis.yml
 .gitignore
-tslint.json
-tsconfig.json
 test-policies.json
 dist/tests
+src/tests
