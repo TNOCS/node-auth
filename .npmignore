@@ -37,9 +37,8 @@ jspm_packages
 .vscode
 config
 coverage
-typings
 .travis.yml
 .gitignore
 test-policies.json
-dist/tests
+dist
 src/tests

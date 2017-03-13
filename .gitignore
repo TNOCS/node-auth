@@ -39,7 +39,5 @@ jspm_packages
 # NODE-AUTH
 typings
 
-dist/example
-dist/tests
-dist/lib/**/*.map
+dist
 test-policies.json
