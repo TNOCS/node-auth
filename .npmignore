@@ -44,5 +44,4 @@ typings
 tslint.json
 tsconfig.json
 test-policies.json
-src
 dist/tests
