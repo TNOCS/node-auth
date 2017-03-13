@@ -1,8 +1,6 @@
 "use strict";
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt');
-var bluebird = require('bluebird');
-mongoose.Promise = bluebird;
+var mongoose = require("mongoose");
+var bcrypt = require("bcrypt");
 var Schema = mongoose.Schema;
 ;
 var emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

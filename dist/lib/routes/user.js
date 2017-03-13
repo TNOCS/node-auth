@@ -1,5 +1,5 @@
 "use strict";
-var user_1 = require('../models/user');
+var user_1 = require("../models/user");
 var error = console.error;
 var onUserChanged;
 var signupAllowed = false;

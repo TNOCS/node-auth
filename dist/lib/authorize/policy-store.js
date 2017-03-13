@@ -1,6 +1,6 @@
 "use strict";
-var lokijs = require('lokijs');
-var action_1 = require('../models/action');
+var lokijs = require("lokijs");
+var action_1 = require("../models/action");
 function sanatize(name) {
     return name.replace(/ /g, '_');
 }

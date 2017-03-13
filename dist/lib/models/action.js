@@ -1,4 +1,5 @@
 "use strict";
+var Action;
 (function (Action) {
     Action[Action["None"] = 0] = "None";
     Action[Action["Create"] = 1] = "Create";
@@ -12,6 +13,5 @@
     Action[Action["Delegate"] = 64] = "Delegate";
     Action[Action["Sign"] = 128] = "Sign";
     Action[Action["All"] = 255] = "All";
-})(exports.Action || (exports.Action = {}));
-var Action = exports.Action;
+})(Action = exports.Action || (exports.Action = {}));
 //# sourceMappingURL=action.js.map

@@ -1,9 +1,7 @@
 import { NextFunction } from 'express';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import * as bluebird from 'bluebird';
 
-(<any>mongoose).Promise = bluebird;
 const Schema = mongoose.Schema;
 
 /**
@@ -13,7 +11,7 @@ const Schema = mongoose.Schema;
  * @interface IUser
  */
 export interface IUser {
-  _id: mongoose.Types.ObjectId;
+  _id: any;
   email?: string;
   password?: string;
   /** first name */

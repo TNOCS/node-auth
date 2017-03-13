@@ -1,3 +1,4 @@
+/// <reference types="express" />
 import { Request } from 'express';
 import { IUser } from './user';
 import { Resource } from './resource';

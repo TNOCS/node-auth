@@ -1,6 +1,6 @@
 "use strict";
-var user_1 = require('../models/user');
-var jwt = require('jsonwebtoken');
+var user_1 = require("../models/user");
+var jwt = require("jsonwebtoken");
 var expiresIn;
 var secretKey;
 function init(options) {
@@ -12,7 +12,7 @@ function login(req, res) {
     var email = req['body'].email;
     var pwd = req['body'].password;
     if (!email || !pwd) {
-        res.status(422).json({ success: false, message: 'Authentication failed. Body should contain a name and password property.' });
+        res.status(422).json({ success: false, message: 'Authentication failed. Body should contain an email and password property.' });
     }
     else {
         user_1.User.findOne({ email: email.toLowerCase() }, function (err, user) {

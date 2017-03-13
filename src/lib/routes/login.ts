@@ -26,7 +26,7 @@ export function login(req: Request, res: Response) {
     const pwd = req['body'].password;
 
     if (!email || !pwd) {
-      res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: 'Authentication failed. Body should contain a name and password property.' });
+      res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: 'Authentication failed. Body should contain an email and password property.' });
     } else {
       // find the user
       User.findOne({ email: email.toLowerCase() }, (err: Error, user: IUserModel) => {

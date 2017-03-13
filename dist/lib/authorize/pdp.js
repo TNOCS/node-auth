@@ -1,5 +1,5 @@
 "use strict";
-var decision_1 = require('../models/decision');
+var decision_1 = require("../models/decision");
 function resolvePolicy(policyStore, policyName, policyCombinator) {
     var resolveRules = policyStore.getRuleResolver(policyName);
     if (!resolveRules) {

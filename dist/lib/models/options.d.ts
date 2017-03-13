@@ -1,7 +1,8 @@
+/// <reference types="express" />
 import { Request } from 'express';
 import { IUser } from './user';
 import { CRUD } from './crud';
-import { PolicyStore } from '../authorize/policy-store';
+import { PolicySet } from '../models/policy';
 export interface INodeAuthOptions {
     secretKey: string;
     expiresIn?: string;
@@ -11,7 +12,10 @@ export interface INodeAuthOptions {
     signup?: string | boolean;
     profile?: string | boolean;
     authorizations?: string | boolean;
-    policyStore?: PolicyStore;
+    policyStore?: {
+        name: string;
+        policySets?: PolicySet[];
+    };
     users?: string;
     onUserChanged?: (user: IUser, req: Request, change: CRUD) => IUser | void;
     verify?: {

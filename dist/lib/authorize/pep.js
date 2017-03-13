@@ -1,6 +1,6 @@
 "use strict";
-var action_1 = require('../models/action');
-var pdp_1 = require('./pdp');
+var action_1 = require("../models/action");
+var pdp_1 = require("./pdp");
 function addExtraAttributesToRequest(extraAttributes, req) {
     if (!extraAttributes) {
         return;

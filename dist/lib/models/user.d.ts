@@ -1,7 +1,7 @@
-/// <reference types="chai" />
+/// <reference types="mongoose" />
 import * as mongoose from 'mongoose';
 export interface IUser {
-    _id: mongoose.Types.ObjectId;
+    _id: any;
     email?: string;
     password?: string;
     first?: string;

@@ -1,3 +1,15 @@
-import { Application, Request, Response, NextFunction } from 'express';
-import { INodeAuthOptions } from './models/options';
-export declare function nodeAuth(app: Application, options: INodeAuthOptions): (req: Request, res: Response, next: NextFunction) => void;
+export { Application, Response, NextFunction, Router } from 'express';
+export { initPolicyStore } from './authorize/policy-store';
+export { initPEP, PolicyEnforcementPoint } from './authorize/pep';
+export { INodeAuthOptions } from './models/options';
+export { PolicySet, PolicyBase, Policy } from './models/policy';
+export { PolicyStore, PolicySetCollection } from './authorize/policy-store';
+export { Resource } from './models/resource';
+export { Action } from './models/action';
+export { CRUD } from './models/crud';
+export { Decision, PermissionRequest } from './models/decision';
+export { Rule, BaseRule, PrivilegeRequest } from './models/rule';
+export { Subject } from './models/subject';
+export { User, IUser } from './models/user';
+export { DecisionCombinator } from './models/decision-combinator';
+export { nodeAuth as NodeAuth } from './node-auth';

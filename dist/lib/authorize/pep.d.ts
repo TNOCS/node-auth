@@ -1,3 +1,4 @@
+/// <reference types="express" />
 import { Request, Response, NextFunction } from 'express';
 import { PolicyStore } from '../authorize/policy-store';
 import { BaseRule } from '../models/rule';

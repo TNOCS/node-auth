@@ -1,3 +1,4 @@
+/// <reference types="express" />
 import { Request, Response } from 'express';
 import { IUser } from '../models/user';
 import { CRUD } from '../models/crud';

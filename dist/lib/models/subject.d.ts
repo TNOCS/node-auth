@@ -1,4 +1,3 @@
-/// <reference types="chai" />
 export interface Subject {
     _id?: string;
     email?: string;

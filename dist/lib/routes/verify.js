@@ -1,6 +1,6 @@
 "use strict";
-var bcrypt = require('bcrypt');
-var user_1 = require('../models/user');
+var bcrypt = require("bcrypt");
+var user_1 = require("../models/user");
 var error = console.error;
 var urlRegex = /\$\{URL\}/g;
 var verificationURL;
