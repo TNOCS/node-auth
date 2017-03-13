@@ -1,6 +1,6 @@
 {
   "name": "node_auth",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
   "main": "./dist/lib/index.js",
   "scripts": {
@@ -26,9 +26,6 @@
   "author": "Erik Vullings <erik.vullings@gmail.com>",
   "license": "MIT",
   "typings": "./dist/lib/index",
-  "files": [
-    "./dist/lib/"
-  ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/express": "^4.0.35",
