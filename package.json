@@ -1,6 +1,6 @@
 {
   "name": "node_auth",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
   "main": "./dist/lib/index.js",
   "scripts": {
@@ -27,6 +27,16 @@
   "license": "MIT",
   "typings": "./dist/lib/index",
   "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-http": "^3.0.0",
+    "codecov": "^1.0.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
+    "mongoose-mock": "^0.4.0",
+    "proxyquire": "^1.7.10",
+    "sinon": "^1.17.7"
+  },
+  "dependencies": {
     "@types/chai": "^3.4.34",
     "@types/express": "^4.0.35",
     "@types/express-serve-static-core": "^4.0.41",
@@ -37,22 +47,12 @@
     "@types/node": "^7.0.8",
     "@types/serve-static": "^1.7.31",
     "@types/sinon": "^1.16.34",
-    "chai": "^3.5.0",
-    "chai-http": "^3.0.0",
-    "codecov": "^1.0.1",
-    "istanbul": "^0.4.5",
-    "mocha": "^3.2.0",
-    "mongoose-mock": "^0.4.0",
-    "proxyquire": "^1.7.10",
-    "sinon": "^1.17.7",
     "typescript": "^2.2.1",
-    "typings": "^2.1.0"
-  },
-  "dependencies": {
+    "typings": "^2.1.0",
     "bcrypt": "^1.0.2",
     "bluebird": "^3.5.0",
     "body-parser": "^1.15.2",
-    "config": "^1.24.0",
+    "config": "^1.25.1",
     "express": "^4.15.2",
     "jsonwebtoken": "^7.2.1",
     "lokijs": "^1.4.2",
