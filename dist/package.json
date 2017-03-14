@@ -1,0 +1,44 @@
+{
+  "name": "node_auth",
+  "version": "0.2.2",
+  "description": "A node authentication package for express.js that offers an API for users to login, signup and see their profile. Also, it can be configured to specify the access rights to routes.",
+  "main": "./lib/index.js",
+  "typings": "./lib/index",
+  "scripts": {
+  },
+  "keywords": [
+    "node",
+    "express",
+    "mongodb",
+    "authentication",
+    "user management",
+    "login",
+    "jwt",
+    "json",
+    "web",
+    "token"
+  ],
+  "author": "Erik Vullings <erik.vullings@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^1.0.2",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.15.2",
+    "config": "^1.25.1",
+    "express": "^4.15.2",
+    "jsonwebtoken": "^7.2.1",
+    "lokijs": "^1.4.2",
+    "mongoose": "^4.7.7",
+    "morgan": "^1.7.0",
+    "nodemailer": "^2.7.2",
+    "nodemailer-mailgun-transport": "^1.2.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TNOCS/node-auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TNOCS/node-auth/issues"
+  },
+  "homepage": "https://github.com/TNOCS/node-auth#readme"
+}
