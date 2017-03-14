@@ -27,6 +27,9 @@
   "license": "MIT",
   "typings": "./dist/lib/index",
   "devDependencies": {
+    "@types/mocha": "^2.2.38",
+    "@types/chai": "^3.4.34",
+    "@types/sinon": "^1.16.34",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
     "codecov": "^1.0.1",
@@ -37,16 +40,13 @@
     "sinon": "^1.17.7"
   },
   "dependencies": {
-    "@types/chai": "^3.4.34",
     "@types/express": "^4.0.35",
     "@types/express-serve-static-core": "^4.0.41",
     "@types/mime": "0.0.29",
-    "@types/mocha": "^2.2.38",
     "@types/mongodb": "^2.1.41",
     "@types/mongoose": "^4.7.8",
     "@types/node": "^7.0.8",
     "@types/serve-static": "^1.7.31",
-    "@types/sinon": "^1.16.34",
     "typescript": "^2.2.1",
     "typings": "^2.1.0",
     "bcrypt": "^1.0.2",
