@@ -86,7 +86,7 @@ export function getUser(req: Request, res: Response) {
  * @returns
  */
 export function getToken(req: Request) {
-  return req['body']['token'] || req['query']['token'] || req.headers['x-access-token'] || req.headers['authorization'];
+  return req.headers['authorization'] || req.headers['x-access-token'] || req['query']['token'] || req['body']['token'];
 }
 
 /**

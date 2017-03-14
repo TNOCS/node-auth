@@ -91,6 +91,30 @@ describe('Login', () => {
         });
     });
 
+    it('should not be able to login with an incorrect token', (done: Function) => {
+      chai.request(server)
+        .post('/api/login')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', 'abcdef' + adminToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          done();
+        });
+    });
+
+    it('should be able to renew their token', (done: Function) => {
+      chai.request(server)
+        .post('/api/login')
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('x-access-token', adminToken)
+        .end((err, res) => {
+          res.should.have.status(HTTPStatusCodes.OK);
+          res.body.success.should.be.true;
+          res.body.should.have.token;
+          done();
+        });
+    });
+
     it('users should be able to login with a correct password', (done: Function) => {
       const email = 'john.smith@gmail.com';
       chai.request(server)
