@@ -25,7 +25,7 @@ function authenticateUser(secretKey: string, blockUnauthenticatedUser = true) {
   const authnErrorHandler = blockUnauthenticatedUser
     ? (req: express.Request, res: express.Response, next: express.NextFunction, msg?: string) => {
       // AuthN failed, so return an error.
-      res.status(403).json({
+      res.status(HTTPStatusCodes.UNAUTHORIZED).json({
         success: false,
         message: msg
       });

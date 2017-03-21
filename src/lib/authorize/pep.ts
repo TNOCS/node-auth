@@ -66,6 +66,7 @@ export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
   return {
     getPolicyEnforcer(policySetName: string, extraRequestAttributes?: BaseRule, generatePermissionRequest?: (req: Request) => PermissionRequest) {
       const policyResolver = pdp.getPolicyResolver(policySetName);
+      if (policyResolver === null) { throw new Error(`Policy ${policySetName} does not exist.`); }
       if (generatePermissionRequest) {
         return (req, res, next) => {
           const permissionRequest = generatePermissionRequest(req);

@@ -80,7 +80,7 @@ describe('Users', () => {
       chai.request(server)
         .get('/api/users')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -207,7 +207,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .send({ email: 'Who.Cares@GMAIL.com', password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -337,7 +337,7 @@ describe('Users', () => {
       chai.request(server)
         .get('/api/profile')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });

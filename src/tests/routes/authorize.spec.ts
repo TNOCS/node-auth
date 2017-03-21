@@ -89,7 +89,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .get('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -130,7 +130,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .post('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -337,7 +337,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .put('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -403,7 +403,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .del('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });

@@ -37,15 +37,15 @@ export interface PolicyStore {
   /** Return one policy set by name */
   getPolicySet(name: string): PolicySetCollection;
   /** Return all policy rules */
-  getPolicyRules(policyName: string): Rule[];
+  getPolicyRules(policyName: string, policySetName?: string): Rule[];
   /** Returns a function that can be used to retreive relevant rules for the current context. */
-  getRuleResolver(policyName: string): (permissionRequest: PermissionRequest) => Rule[];
+  getRuleResolver(policyName: string, policySetName?: string): (permissionRequest: PermissionRequest) => Rule[];
   /** Returns a function that can be used to retreive a subject's privileges with respect to a certain context. Request action is ignored. */
-  getPrivilegesResolver(policyName: string): (permissionRequest: PermissionRequest) => Action;
+  getPrivilegesResolver(policyName: string, policySetName?: string): (permissionRequest: PermissionRequest) => Action;
   /** Get an authenticated user's privileges */
   getPrivileges(subject: Subject): Rule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
-  getPolicyEditor(policyName: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
+  getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
   /** Save the database */
   save(callback: (err: Error) => void);
 }
@@ -55,7 +55,7 @@ function sanatize(name: string) {
 }
 
 function createPolicyName(policySetName: string, policyName: string) {
-  return sanatize(`${policySetName}___${policyName}`);
+  return policySetName ? sanatize(`${policySetName}___${policyName}`) : policyName;
 }
 
 /**
@@ -235,11 +235,11 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
     getPolicySet(name: string) {
       return psCollection.findOne({ name: name });
     },
-    getPolicyRules(policyName: string) {
-      return db.getCollection<Rule>(policyName).find();
+    getPolicyRules(policyName: string, policySetName?: string) {
+      return db.getCollection<Rule>(createPolicyName(policySetName, policyName)).find();
     },
-    getRuleResolver(policyName: string) {
-      const ruleCollection = db.getCollection<Rule>(policyName);
+    getRuleResolver(policyName: string, policySetName?: string) {
+      const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
       if (!ruleCollection) { return null; }
       return (req: PermissionRequest) => {
         return ruleCollection
@@ -278,8 +278,9 @@ export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): Po
       });
       return rules;
     },
-    getPolicyEditor(policyName: string) {
-      const ruleCollection = db.getCollection<Rule>(policyName);
+    getPolicyEditor(policyName: string, policySetName?: string) {
+      const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
+      if (ruleCollection === null) { throw new Error(`Cannot get rules for policy ${policyName}!`); }
       return (change: 'add' | 'update' | 'delete', rule: Rule) => {
         switch (change) {
           case 'add':

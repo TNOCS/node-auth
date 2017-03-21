@@ -13,4 +13,5 @@ export { Rule, BaseRule, PrivilegeRequest } from './models/rule';
 export { Subject } from './models/subject';
 export { User, IUser } from './models/user';
 export { DecisionCombinator } from './models/decision-combinator';
+export { sendInterceptor } from './helpers/interceptor';
 export { nodeAuth as NodeAuth } from './node-auth';
