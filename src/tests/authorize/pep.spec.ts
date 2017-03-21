@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Request } from 'express';
-import { PolicyStore, initPolicyStore } from '../../lib/authorize/policy-store';
+import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
 import { PermissionRequest } from '../../lib/models/decision';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
@@ -25,7 +25,7 @@ describe('The PolicyEnforcementPoint', () => {
   });
 
   before(() => {
-    policyStore = initPolicyStore('test-policies.json', [{
+    policyStore = PolicyStoreFactory('test-policies.json', [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{

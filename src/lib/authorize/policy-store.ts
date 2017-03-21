@@ -215,7 +215,7 @@ function isSubjectRelevantForRule(rule: Rule, req: PermissionRequest): boolean {
   return true;
 }
 
-export function initPolicyStore(name = 'policies', policySets?: PolicySet[]): PolicyStore {
+export function PolicyStoreFactory(name = 'policies', policySets?: PolicySet[]): PolicyStore {
   const db = new lokijs(name);
   if (policySets) {
     loadPolicySets(db, policySets);

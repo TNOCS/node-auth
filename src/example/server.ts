@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser';
 import * as morgan from 'morgan';
 import * as mongoose from 'mongoose';
 import * as bluebird from 'bluebird';
-import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, initPolicyStore } from '../lib/index';
+import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, PolicyStoreFactory } from '../lib/index';
 
 const config = require('config'); // get our config file
 export const server: Application = express();
@@ -51,7 +51,7 @@ server.get('/', (req, res) => {
 const auth = NodeAuth(server, <INodeAuthOptions>{
   secretKey: config.secret,
   blockUnauthenticatedUser: false, // if true, default, no unauthenticated user will pass beyond this point
-  policyStore: initPolicyStore('example-policies.json', [{
+  policyStore: PolicyStoreFactory('example-policies.json', [{
     name: 'Main policy set',
     combinator: 'first',
     policies: [{

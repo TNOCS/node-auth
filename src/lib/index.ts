@@ -1,6 +1,6 @@
 // See also https://scotch.io/tutorials/authenticate-a-node-js-api-with-json-web-tokens
 export { Application, Response, NextFunction, Router } from 'express';
-export { initPolicyStore } from './authorize/policy-store';
+export { PolicyStoreFactory } from './authorize/policy-store';
 export { initPEP, PolicyEnforcementPoint } from './authorize/pep';
 export { INodeAuthOptions } from './models/options';
 export { PolicySet, PolicyBase, Policy } from './models/policy';

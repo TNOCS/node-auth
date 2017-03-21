@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import { PolicyStore, initPolicyStore } from '../../lib/authorize/policy-store';
+import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
 import { PolicyDecisionPoint, initPDP } from '../../lib/authorize/pdp';
@@ -14,7 +14,7 @@ describe('The PolicyDecisionPoint', () => {
   let pdp: PolicyDecisionPoint;
 
   before(() => {
-    policyStore = initPolicyStore('test-policies.json', [{
+    policyStore = PolicyStoreFactory('test-policies.json', [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{
