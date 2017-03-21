@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser';
 import * as morgan from 'morgan';
 import * as mongoose from 'mongoose';
 import * as bluebird from 'bluebird';
-import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions } from '../lib/index';
+import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, initPolicyStore } from '../lib/index';
 
 const config = require('config'); // get our config file
 export const server: Application = express();
@@ -51,68 +51,65 @@ server.get('/', (req, res) => {
 const auth = NodeAuth(server, <INodeAuthOptions>{
   secretKey: config.secret,
   blockUnauthenticatedUser: false, // if true, default, no unauthenticated user will pass beyond this point
-  policyStore: {
-    name: 'example-policies.json',
-    policySets: [{
-      name: 'Main policy set',
+  policyStore: initPolicyStore('example-policies.json', [{
+    name: 'Main policy set',
+    combinator: 'first',
+    policies: [{
+      name: 'admins rule',
       combinator: 'first',
-      policies: [{
-        name: 'admins rule',
-        combinator: 'first',
-        rules: [{
-          subject: { admin: true },
-          action: Action.All,
-          decision: Decision.Permit
-        }]
+      rules: [{
+        subject: { admin: true },
+        action: Action.All,
+        decision: Decision.Permit
+      }]
+    }, {
+      name: 'rbac',
+      combinator: 'first',
+      rules: [{
+        subject: { subscribed: true },
+        action: Action.Create,
+        resource: {
+          type: 'article'
+        },
+        decision: Decision.Permit
       }, {
-        name: 'rbac',
-        combinator: 'first',
-        rules: [{
-          subject: { subscribed: true },
-          action: Action.Create,
-          resource: {
-            type: 'article'
-          },
-          decision: Decision.Permit
-        }, {
-          subject: { subscribed: true },
-          action: Action.Create,
-          resource: {
-            type: 'comment'
-          },
-          decision: Decision.Permit
-        }, {
-          subject: { email: 'john.smith@gmail.com' },
-          action: Action.Manage,
-          decision: Decision.Permit,
-          resource: {
-            articleID: ['johnny_article']
-          }
-        }, {
-          subject: { _id: '456' },
-          action: Action.Author,
-          decision: Decision.Permit,
-          resource: {
-            articleID: ['456_article']
-          }
-        }, {
-          desc: 'Anyone can read public resources',
-          action: Action.Read,
-          decision: Decision.Permit,
-          resource: {
-            articleID: ['public_article']
-          }
-        }, {
-          desc: 'Subscribed users can create new resources',
-          subject: {
-            subscribed: true
-          },
-          action: Action.Create,
-          decision: Decision.Permit
-        }]
+        subject: { subscribed: true },
+        action: Action.Create,
+        resource: {
+          type: 'comment'
+        },
+        decision: Decision.Permit
+      }, {
+        subject: { email: 'john.smith@gmail.com' },
+        action: Action.Manage,
+        decision: Decision.Permit,
+        resource: {
+          articleID: ['johnny_article']
+        }
+      }, {
+        subject: { _id: '456' },
+        action: Action.Author,
+        decision: Decision.Permit,
+        resource: {
+          articleID: ['456_article']
+        }
+      }, {
+        desc: 'Anyone can read public resources',
+        action: Action.Read,
+        decision: Decision.Permit,
+        resource: {
+          articleID: ['public_article']
+        }
+      }, {
+        desc: 'Subscribed users can create new resources',
+        subject: {
+          subscribed: true
+        },
+        action: Action.Create,
+        decision: Decision.Permit
       }]
     }]
-  },
+  }]),
   // policyStore: policyStore,
   verify: {
     route: true,

@@ -2,7 +2,7 @@ import { Request } from 'express';
 import { IUser } from './user';
 import { CRUD } from './crud';
 // import { PolicyStore } from '../authorize/policy-store';
-import { PolicySet } from '../models/policy';
+import { PolicyStore } from '../authorize/policy-store';
 
 export interface INodeAuthOptions {
   /** The secret for encrypting and decrypting the JWT */
@@ -13,9 +13,10 @@ export interface INodeAuthOptions {
    */
   expiresIn?: string;
   /**
-   * By default, all users that are not authenticated (they have no valid token) will be blocked and an authentication error is returned.
+   * By default, all users that are not authenticated (they have no valid token) will be blocked and an UNAUTHORIZED error is returned.
    * However, sometimes you may wish to let them through anyways, and verify them in your own code. In that case, set this property to false,
    * which will clear any user preoperty of the request object.
+   * NOTE: Even when set to false, all api/* (except api/login and api/signup) routes will be blocked from unauthenticated access.
    *
    * @type {boolean}
    * @memberOf INodeAuthOptions (default true)
@@ -32,7 +33,7 @@ export interface INodeAuthOptions {
   /** The authorization route, default /api/authorizations. If false, don't create it. */
   authorizations?: string | boolean;
   /** Required only if you would like to use /api/authorizations */
-  policyStore?: { name: string, policySets?: PolicySet[] };
+  policyStore?: PolicyStore;
   /** List of all users (only accessible to admins), default /api/users. If false, don't create it. */
   users?: string;
   /**

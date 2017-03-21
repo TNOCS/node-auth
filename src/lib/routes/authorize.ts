@@ -7,7 +7,6 @@ import { PrivilegeRequest } from '../models/rule';
 import { CRUD } from '../models/crud';
 import { Action } from '../models/action';
 import { ResponseMessage } from '../models/response-message';
-import { initPolicyStore } from '../authorize/policy-store';
 
 export let policyStore: PolicyStore;
 let pdp: PolicyDecisionPoint;
@@ -65,7 +64,7 @@ function getPrivilegeRequest(req: Request, res: Response) {
 
 export function init(options: INodeAuthOptions) {
   if (!options.policyStore) { throw new Error('No PolicyStore defined! In case you do not turn of options.authorizations, you need to supply a policy store.'); }
-  policyStore = initPolicyStore(options.policyStore.name, options.policyStore.policySets);
+  policyStore = options.policyStore;
   pdp = initPDP(policyStore);
 }
 
