@@ -11,8 +11,13 @@ chai.should();
 describe('The PolicyStore', () => {
   let policyStore: PolicyStore;
 
-  before(() => {
-    policyStore = PolicyStoreFactory('test-policies.json', [{
+  before(done => {
+    const callback = (err: Error, ps: PolicyStore) => {
+      if (err) { throw err; }
+      policyStore = ps;
+      done();
+    };
+    PolicyStoreFactory('test-policies.json', callback, [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{

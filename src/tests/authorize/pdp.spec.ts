@@ -13,8 +13,14 @@ describe('The PolicyDecisionPoint', () => {
   let policyStore: PolicyStore;
   let pdp: PolicyDecisionPoint;
 
-  before(() => {
-    policyStore = PolicyStoreFactory('test-policies.json', [{
+  before(done => {
+    const callback = (err: Error, ps: PolicyStore) => {
+      if (err) { throw err; }
+      policyStore = ps;
+      pdp = initPDP(policyStore);
+      done();
+    };
+    PolicyStoreFactory('test-policies.json', callback, [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{
@@ -69,8 +75,6 @@ describe('The PolicyDecisionPoint', () => {
         }]
       }]
     }]);
-
-    pdp = initPDP(policyStore);
   });
 
   it('should deny permission when the policy set is not found.', () => {

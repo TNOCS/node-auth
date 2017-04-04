@@ -50,11 +50,11 @@ export interface PolicyStore {
   save(callback: (err: Error) => void);
 }
 
-function sanatize(name: string) {
+const sanatize = (name: string) => {
   return name.replace(/ /g, '_');
 }
 
-function createPolicyName(policySetName: string, policyName: string) {
+const createPolicyName = (policySetName: string, policyName: string) => {
   return policySetName ? sanatize(`${policySetName}___${policyName}`) : policyName;
 }
 
@@ -66,7 +66,7 @@ function createPolicyName(policySetName: string, policyName: string) {
  * @param {Policy} p
  * @returns
  */
-function loadPolicy(db: Loki, policyFullName: string, p: Policy) {
+const loadPolicy = (db: Loki, policyFullName: string, p: Policy) => {
   const ruleCollection = db.addCollection<Rule>(policyFullName);
   p.rules.forEach(rule => {
     ruleCollection.insert(rule);
@@ -80,7 +80,7 @@ function loadPolicy(db: Loki, policyFullName: string, p: Policy) {
  * @param {LokiCollection<PolicySetCollection>} psCol
  * @param {PolicySet} ps
  */
-function loadPolicySet(db: Loki, psCollection: LokiCollection<PolicySetCollection>, ps: PolicySet) {
+const loadPolicySet = (db: Loki, psCollection: LokiCollection<PolicySetCollection>, ps: PolicySet) => {
   const policySummaries: PolicyBase[] = [];
   ps.policies.forEach(p => {
     const policyFullName = createPolicyName(ps.name, p.name);
@@ -98,7 +98,7 @@ function loadPolicySet(db: Loki, psCollection: LokiCollection<PolicySetCollectio
  * @param {Loki} db
  * @param {PolicySet[]} policySets
  */
-function loadPolicySets(db: Loki, policySets: PolicySet[]) {
+const loadPolicySets = (db: Loki, policySets: PolicySet[]) => {
   const psCol = db.addCollection<PolicySetCollection>('policy-sets');
   policySets.forEach(ps => {
     loadPolicySet(db, psCol, ps);
@@ -112,7 +112,7 @@ function loadPolicySets(db: Loki, policySets: PolicySet[]) {
  * @param {(string[] | number[])} actual
  * @return {boolean}
  */
-function matchArrays(required: any[], actual: any[]) {
+const matchArrays = (required: any[], actual: any[]) => {
   let isMatch = false;
   required.some(r => {
     isMatch = actual.indexOf(r) >= 0;
@@ -128,7 +128,7 @@ function matchArrays(required: any[], actual: any[]) {
  * @param {(string | number | string[] | number[])} reqProp
  * @returns
  */
-function matchProperties(ruleProp: boolean | string | number | string[] | number[], reqProp: boolean | string | number | string[] | number[]) {
+const matchProperties = (ruleProp: boolean | string | number | string[] | number[], reqProp: boolean | string | number | string[] | number[]) => {
   if (ruleProp instanceof Array) {
     // ruleProp is an array
     if (reqProp instanceof Array) {
@@ -180,7 +180,7 @@ function matchProperties(ruleProp: boolean | string | number | string[] | number
  * @param {PermissionRequest} req
  * @returns {boolean}
  */
-function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
+const isRuleRelevant = (rule: Rule, req: PermissionRequest): boolean => {
   if (rule.action) {
     if (!req.action || !((req.action & rule.action) === req.action)) { return false; }
   }
@@ -207,7 +207,7 @@ function isRuleRelevant(rule: Rule, req: PermissionRequest): boolean {
  * @param {PermissionRequest} req
  * @returns {boolean}
  */
-function isSubjectRelevantForRule(rule: Rule, req: PermissionRequest): boolean {
+const isSubjectRelevantForRule = (rule: Rule, req: PermissionRequest): boolean => {
   if (!rule.subject || !req.subject) { return false; }
   for (const key in rule.subject) {
     if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
@@ -215,14 +215,10 @@ function isSubjectRelevantForRule(rule: Rule, req: PermissionRequest): boolean {
   return true;
 }
 
-export function PolicyStoreFactory(name = 'policies', policySets?: PolicySet[]): PolicyStore {
-  const db = new lokijs(name);
-  if (policySets) {
-    loadPolicySets(db, policySets);
-  }
+const createPolicyStore = (db: Loki) => {
   const psCollection = db.getCollection<PolicySetCollection>('policy-sets');
   return {
-    name: name,
+    name: db.filename,
     getPolicySets() {
       const policySets = psCollection.find();
       return policySets.map(ps => {
@@ -297,5 +293,37 @@ export function PolicyStoreFactory(name = 'policies', policySets?: PolicySet[]):
     save(done) {
       db.save(done);
     }
+  };
+}
+
+/**
+ * PolicyStore factory: creates a new PolicyStore, either from file, or, if the
+ * file doesn't exist, from the supplied policy sets.
+ *
+ * @export
+ * @param {string} [name='policies.json']
+ * @param {((dataOrErr: any | Error) => void)} callback
+ * @param {PolicySet[]} [policySets]
+ * @returns {PolicyStore}
+ */
+export const PolicyStoreFactory = (name = 'policies.json', callback: (err: Error, policyStore: PolicyStore) => void, policySets?: PolicySet[]) => {
+  const db = new lokijs(name, <LokiConfigureOptions>{
+    autoload: policySets ? false : true,
+    autosave: true,
+    env: 'NODEJS',
+    autosaveInterval: 10000,
+    persistenceMethod: 'fs',
+    verbose: true,
+    autoloadCallback: (dataOrErr) => {
+      if (dataOrErr instanceof Error) {
+        callback(dataOrErr, null);
+      } else {
+        callback(null, createPolicyStore(db));
+      }
+    }
+  });
+  if (policySets) {
+    loadPolicySets(db, policySets);
+    callback(null, createPolicyStore(db));
   };
 }

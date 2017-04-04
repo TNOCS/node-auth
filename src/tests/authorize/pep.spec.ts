@@ -24,8 +24,14 @@ describe('The PolicyEnforcementPoint', () => {
     server.restore();
   });
 
-  before(() => {
-    policyStore = PolicyStoreFactory('test-policies.json', [{
+  before(done => {
+    const callback = (err: Error, ps: PolicyStore) => {
+      if (err) { throw err; }
+      policyStore = ps;
+      pep = initPEP(policyStore);
+      done();
+    };
+    PolicyStoreFactory('test-policies.json', callback, [{
       name: 'First policy set',
       combinator: 'first',
       policies: [{
@@ -80,10 +86,7 @@ describe('The PolicyEnforcementPoint', () => {
         }]
       }]
     }]);
-
-    pep = initPEP(policyStore);
   });
-
 
   it('should allow admins to edit an article using the default permission request object.', () => {
     const policySets = policyStore.getPolicySets();
