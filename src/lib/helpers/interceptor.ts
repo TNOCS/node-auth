@@ -13,6 +13,7 @@ export const sendInterceptor = (res: Response, callback: (body: { [key: string]:
     res.send = function () {
         const body = JSON.parse(arguments[0]);
         callback(body);
+        arguments[0] = JSON.stringify(body);
         return oldSend.apply(res, arguments);
     };
 };

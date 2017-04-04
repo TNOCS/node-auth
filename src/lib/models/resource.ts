@@ -5,7 +5,7 @@
  * @interface Resource
  */
 export interface Resource {
-  domain?: string[];
+  domain?: string;
   type?: string;
   [key: string]: boolean | string | string[] | number | number[] ;
 }
