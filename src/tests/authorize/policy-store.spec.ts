@@ -47,7 +47,7 @@ describe('The PolicyStore', () => {
           action: Action.Update,
           decision: Decision.Permit,
           resource: {
-            domain: ['articles']
+            domain: 'articles'
           }
         }, {
           subject: { _id: '123' },
@@ -61,21 +61,21 @@ describe('The PolicyStore', () => {
           action: Action.Update,
           decision: Decision.Permit,
           resource: {
-            domain: ['project123']
+            domain: 'project123'
           }
         }, {
           subject: { role: ['author', 'member'] },
           action: Action.Update,
           decision: Decision.Permit,
           resource: {
-            domain: ['project123']
+            domain: 'project123'
           }
         }, {
           subject: { role: ['author', 'member'] },
           action: Action.Update,
           decision: Decision.Permit,
           resource: {
-            domain: ['project123']
+            domain: 'project123'
           }
         }]
       }]
@@ -115,7 +115,7 @@ describe('The PolicyStore', () => {
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { admin: false } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ resource: { domain: ['*'] } });
+    rules = ruleResolver({ resource: { domain: '*' } });
     rules.length.should.be.eql(0);
 
     policySet = policyStore.getPolicySet(policySets[1].name);
@@ -130,11 +130,11 @@ describe('The PolicyStore', () => {
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { _id: '123' }, action: Action.Create, resource: { editors: '123' } });
     rules.length.should.be.eql(1);
-    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: ['articles'] } });
+    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'articles' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '123' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '12345' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
   });
 
@@ -145,13 +145,13 @@ describe('The PolicyStore', () => {
     let rules = ruleResolver({ subject: { admin: true } });
     rules = ruleResolver({ subject: { _id: '456' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { _id: '456' }, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '456' }, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Update, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Update, resource: { domain: 'project123' } });
     rules.length.should.be.eql(1);
-    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Delete, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Delete, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Manage, resource: { domain: ['project123'] } });
+    rules = ruleResolver({ subject: { _id: '456' }, action: Action.Manage, resource: { domain: 'project123' } });
     rules.length.should.be.eql(0); // NOTE: we ask for more privileges than we are allowed to have, e.g. Action.Manage > Action.Update, so do not permit it.
   });
 
@@ -201,7 +201,7 @@ describe('The PolicyStore', () => {
     const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.Permit });
     rule1.subject._id = '123';
     const rule2 = policyEditor('add', { subject: { role: ['moderator2'] }, decision: Decision.Permit });
-    rule2.resource = { domain: ['hello'] };
+    rule2.resource = { domain: 'hello' };
     const rule3 = policyEditor('add', { subject: { email: 'janet.doe@gmail.com' }, decision: Decision.Permit });
     rule3.subject.admin = true;
     policyEditor('update', rule1);
@@ -209,7 +209,7 @@ describe('The PolicyStore', () => {
     policyEditor('update', rule3);
     let rules = ruleResolver({ subject: { _id: '654321' } });
     rules.length.should.be.eql(0);
-    rules = ruleResolver({ subject: { role: ['moderator2'] }, resource: { domain: ['hello'] } });
+    rules = ruleResolver({ subject: { role: ['moderator2'] }, resource: { domain: 'hello' } });
     rules.length.should.be.eql(1);
     rules = ruleResolver({ subject: { email: 'janet.doe@gmail.com' } });
     rules.length.should.be.eql(0);
@@ -220,11 +220,11 @@ describe('The PolicyStore', () => {
   it('should retrieve a subject\'s privileges', () => {
     const policySets = policyStore.getPolicySets();
     const privilegesResolver = policyStore.getPrivilegesResolver(policySets[1].name);
-    let actions = privilegesResolver({ subject: { role: ['editor'] }, resource: { domain: ['articles']} });
+    let actions = privilegesResolver({ subject: { role: ['editor'] }, resource: { domain: 'articles'} });
     ((actions & Action.Update) === Action.Update).should.be.true;
-    actions = privilegesResolver({ subject: { admin: true }, resource: { domain: ['articles']} });
+    actions = privilegesResolver({ subject: { admin: true }, resource: { domain: 'articles'} });
     ((actions & Action.Update) === Action.Update).should.be.true;
-    actions = privilegesResolver({ subject: { _id: '123', role: ['editor'] }, resource: { domain: ['articles'], editors: '123' } });
+    actions = privilegesResolver({ subject: { _id: '123', role: ['editor'] }, resource: { domain: 'articles', editors: '123' } });
     ((actions & Action.Manage) === Action.Manage).should.be.true;
   });
 

@@ -63,14 +63,14 @@ describe('The PolicyDecisionPoint', () => {
           action: Action.Manage,
           decision: Decision.Permit,
           resource: {
-            domain: ['my_domain']
+            domain: 'my_domain'
           }
         }, {
           subject: { _id: '456' },
           action: Action.Author,
           decision: Decision.Permit,
           resource: {
-            domain: ['my_domain']
+            domain: 'my_domain'
           }
         }]
       }]
