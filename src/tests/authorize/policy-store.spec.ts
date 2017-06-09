@@ -181,9 +181,9 @@ describe('The PolicyStore', () => {
     const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.Permit });
     const rule2 = policyEditor('add', { subject: { role: ['moderator2'] }, decision: Decision.Permit });
     const rule3 = policyEditor('add', { subject: { email: 'jane.doe@gmail.com' }, decision: Decision.Permit });
-    policyEditor('delete', rule1);
-    policyEditor('delete', rule2);
-    policyEditor('delete', rule3);
+    policyEditor('delete', rule1.rule );
+    policyEditor('delete', rule2.rule );
+    policyEditor('delete', rule3.rule );
     let rules = ruleResolver({ subject: { _id: '654321' } });
     rules.length.should.be.eql(0);
     rules = ruleResolver({ subject: { role: ['moderator2'] } });
@@ -198,11 +198,11 @@ describe('The PolicyStore', () => {
     const policyName = policySet.policies[1].name;
     const policyEditor = policyStore.getPolicyEditor(policyName);
     const ruleResolver = policyStore.getRuleResolver(policyName);
-    const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.Permit });
+    const rule1 = policyEditor('add', { subject: { _id: '654321' }, decision: Decision.Permit }).rule;
     rule1.subject._id = '123';
-    const rule2 = policyEditor('add', { subject: { role: ['moderator2'] }, decision: Decision.Permit });
+    const rule2 = policyEditor('add', { subject: { role: ['moderator2'] }, decision: Decision.Permit }).rule;
     rule2.resource = { domain: 'hello' };
-    const rule3 = policyEditor('add', { subject: { email: 'janet.doe@gmail.com' }, decision: Decision.Permit });
+    const rule3 = policyEditor('add', { subject: { email: 'janet.doe@gmail.com' }, decision: Decision.Permit }).rule;
     rule3.subject.admin = true;
     policyEditor('update', rule1);
     policyEditor('update', rule2);

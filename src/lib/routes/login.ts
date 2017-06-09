@@ -4,6 +4,7 @@ import { User, IUser, IUserModel } from '../models/user';
 import { CRUD } from '../models/crud';
 import { INodeAuthOptions } from '../models/options';
 import { getToken } from './user';
+import { UNAUTHORIZED, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 
 // export type CRUD = 'create' | 'update' | 'delete';
 export type UserChangedEvent = (user: IUser, req: Request, change: CRUD) => IUser | void;
@@ -31,12 +32,12 @@ export function login(req: Request, res: Response) {
     return renewToken(req, res, token);
   }
   if (!email || !pwd) {
-    return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: 'Authentication failed. Body should contain an email and password property.' });
+    return res.status(UNPROCESSABLE_ENTITY).json({ success: false, message: 'Authentication failed. Body should contain an email and password property.' });
   }
   // find the user
   User.findOne({ email: email.toLowerCase() }, (err: Error, user: IUserModel) => {
     if (err || !user) {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Authentication failed.' }); // User not found
+      res.status(UNAUTHORIZED).json({ success: false, message: 'Authentication failed.' }); // User not found
     } else if (user) {
       // console.log(JSON.stringify(user, null, 2));
       // check if password matches
@@ -51,7 +52,7 @@ export function login(req: Request, res: Response) {
           // return the information including token as JSON
           res.json({ success: true, token: token, user: json });
         } else {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong password
+          res.status(UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong password
         }
       });
     }
@@ -69,13 +70,13 @@ function renewToken(req: Request, res: Response, token: string) {
   // renew token?
   jwt.verify(token, secretKey, (err, user) => {
     if (err) {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong token
+      res.status(UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong token
     } else {
-      const jwtDecoded = jwt.decode(token);
+      const jwtDecoded = <{ email: string }>jwt.decode(token);
       // find the user
       User.findOne({ email: jwtDecoded.email.toLowerCase() }, (err: Error, user: IUserModel) => {
         if (err || !user) {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Authentication failed.' }); // User not found
+          res.status(UNAUTHORIZED).json({ success: false, message: 'Authentication failed.' }); // User not found
         } else if (user) {
           const json = <IUser>user.toJSON();
           delete json.password;
@@ -86,7 +87,7 @@ function renewToken(req: Request, res: Response, token: string) {
           // return the information including token as JSON
           res.json({ success: true, token: token, user: json });
         } else {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong password
+          res.status(UNAUTHORIZED).json({ success: false, msg: 'Authentication failed.' }); // Wrong password
         }
       });
     }

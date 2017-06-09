@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { User, IUser, IUserModel, validateEmailAddress } from '../models/user';
 import { CRUD } from '../models/crud';
 import { INodeAuthOptions } from '../models/options';
+import { BAD_REQUEST, UNAUTHORIZED, CREATED, UNPROCESSABLE_ENTITY, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR, NO_CONTENT, PRECONDITION_FAILED } from 'http-status-codes';
 
 // export type CRUD = 'create' | 'update' | 'delete';
 export type UserChangedEvent = (user: IUser, req: Request, change: CRUD) => IUser | void;
@@ -35,12 +36,12 @@ export function init(options: INodeAuthOptions) {
 export function listUsers(req: Request, res: Response) {
   const user: IUser = req['user'];
   if (!user.admin) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request all users. Grow up and become an admin first!' });
+    res.status(UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request all users. Grow up and become an admin first!' });
     return;
   }
   User.find({}, (err, users: IUserModel[]) => {
     if (err) {
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Error retreiving users.' });
+      res.status(UNAUTHORIZED).json({ success: false, message: 'Error retreiving users.' });
       return;
     }
     let filteredUsers = users.map(u => {
@@ -65,12 +66,12 @@ export function getUser(req: Request, res: Response) {
   const user: IUser = req['user'];
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request this user.' });
+    res.status(UNAUTHORIZED).json({ success: false, message: 'You are not authorised to request this user.' });
     return;
   }
   User.findById(id, (err, user: IUser) => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retreiving user.' });
+      res.status(INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retreiving user.' });
       return;
     }
     delete user.password;
@@ -100,12 +101,12 @@ function saveUser(user: IUserModel, req: Request, res: Response) {
   user.save(err => {
     if (err) {
       error(err);
-      return res.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY).json({ success: false, message: 'User could not be created.' });
+      return res.status(UNPROCESSABLE_ENTITY).json({ success: false, message: 'User could not be created.' });
     }
     // log('User saved successfully');
     const json = <IUser> user.toJSON();
     delete json.password;
-    return res.status(HTTPStatusCodes.CREATED).json( { user: json });
+    return res.status(CREATED).json( { user: json });
   });
 }
 
@@ -124,7 +125,7 @@ function createNewUser(req: Request, res: Response) {
   const admin = req['body'].admin;
 
   if (!name || !email || !password || !validateEmailAddress(email)) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Signup with name, email and password!' });
+    res.status(PRECONDITION_FAILED).json({ success: false, message: 'Signup with name, email and password!' });
     return;
   }
 
@@ -160,7 +161,7 @@ function createNewUser(req: Request, res: Response) {
 export function signupUser(req: Request, res: Response) {
   const token = getToken(req);
   if (token) {
-    res.status(HTTPStatusCodes.BAD_REQUEST).json({ success: false, message: 'You are already signed in. Please logout first.'});
+    res.status(BAD_REQUEST).json({ success: false, message: 'You are already signed in. Please logout first.'});
     return;
   }
   createNewUser(req, res);
@@ -178,7 +179,7 @@ export function signupUser(req: Request, res: Response) {
 export function createUser(req: Request, res: Response) {
   const adminUser = <IUser> req['user'];
   if (!adminUser || !adminUser.admin) {
-    res.status(HTTPStatusCodes.METHOD_NOT_ALLOWED).json( { success: false, message: 'Regular users cannot create new user. Ask an administrator.' });
+    res.status(METHOD_NOT_ALLOWED).json( { success: false, message: 'Regular users cannot create new user. Ask an administrator.' });
     return;
   }
   createNewUser(req, res);
@@ -199,12 +200,12 @@ export function updateUser(req: Request, res: Response) {
   const user: IUser = req['user'];
 
   if (!id) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
+    res.status(PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
     return;
   }
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Request denied' });
+    res.status(UNAUTHORIZED).json({ success: false, message: 'Request denied' });
     return;
   }
 
@@ -220,7 +221,7 @@ export function updateUser(req: Request, res: Response) {
   // See http://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
   User.findByIdAndUpdate(id, updatedUser, { new: true }, (err, finalUser) => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
+      res.status(INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
       return;
     }
     const u = <IUser>finalUser.toJSON();
@@ -243,12 +244,12 @@ export function deleteUser(req: Request, res: Response) {
   const user: IUser = req['user'];
 
   if (!id) {
-    res.status(HTTPStatusCodes.PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
+    res.status(PRECONDITION_FAILED).json({ success: false, message: 'Specify the user\'s ID' });
     return;
   }
 
   if (!user.admin && user._id.toString() !== id) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Request denied' });
+    res.status(UNAUTHORIZED).json({ success: false, message: 'Request denied' });
     return;
   }
 
@@ -258,10 +259,10 @@ export function deleteUser(req: Request, res: Response) {
 
   User.findByIdAndRemove(id, err => {
     if (err) {
-      res.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
+      res.status(INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error. Please try again later.' });
       return;
     }
-    res.status(HTTPStatusCodes.NO_CONTENT).end();
+    res.status(NO_CONTENT).end();
   });
 }
 

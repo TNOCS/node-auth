@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 import { User, IUser, IUserModel } from '../lib/models/user';
 import * as chai from 'chai';
 import { server } from '../example/server';
+import { OK, FORBIDDEN } from 'http-status-codes';
 
 chai.should();
 chai.use(require('chai-http'));
@@ -55,13 +56,13 @@ describe('Authorize route', () => {
             users.push(<IUser>r.toJSON());
             chai.request(server)
               .post('/api/login')
-              .set('content-type', 'application/x-www-form-urlencoded')
+              .set('content-type', 'application/json')
               .send({ email: 'Erik.Vullings@GMAIL.com', password: 'password' })
               .end((err, res) => {
                 adminToken = res.body.token;
                 chai.request(server)
                   .post('/api/login')
-                  .set('content-type', 'application/x-www-form-urlencoded')
+                  .set('content-type', 'application/json')
                   .send({ email: 'john.smith@gmail.com', password: 'johnny' })
                   .end((err, res) => {
                     johnnyToken = res.body.token;
@@ -97,7 +98,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .get('/unprotected/resource')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -109,7 +110,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -121,7 +122,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .get('/protected/public_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -133,7 +134,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -143,7 +144,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .get('/protected/protected_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -155,7 +156,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -167,7 +168,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -179,7 +180,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -191,7 +192,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .put('/protected/public_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -203,7 +204,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -213,7 +214,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .put('/protected/protected_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -225,7 +226,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -237,7 +238,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -249,7 +250,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -261,7 +262,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .post('/protected/public_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -273,7 +274,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -283,7 +284,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .post('/protected/protected_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -295,7 +296,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -307,7 +308,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -319,7 +320,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -332,7 +333,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .del('/protected/public_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -344,7 +345,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -354,7 +355,7 @@ describe('Authorize route', () => {
       chai.request(server)
         .del('/protected/protected_article')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -366,7 +367,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -378,7 +379,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -390,7 +391,7 @@ describe('Authorize route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });

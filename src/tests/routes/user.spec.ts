@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 import * as chai from 'chai';
 import { User, IUser, IUserModel } from '../../lib/models/user';
 import { server } from '../../example/server';
+import { OK, BAD_REQUEST, UNAUTHORIZED, CREATED, UNPROCESSABLE_ENTITY, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR, NO_CONTENT } from 'http-status-codes';
 
 chai.should();
 chai.use(require('chai-http'));
@@ -56,13 +57,13 @@ describe('Users', () => {
             users.push(<IUser>r.toJSON());
             chai.request(server)
               .post('/api/login')
-              .set('content-type', 'application/x-www-form-urlencoded')
+              .set('content-type', 'application/json')
               .send({ email: 'Erik.Vullings@GMAIL.com', password: 'password' })
               .end((err, res) => {
                 adminToken = res.body.token;
                 chai.request(server)
                   .post('/api/login')
-                  .set('content-type', 'application/x-www-form-urlencoded')
+                  .set('content-type', 'application/json')
                   .send({ email: 'john.smith@gmail.com', password: 'johnny' })
                   .end((err, res) => {
                     johnnyToken = res.body.token;
@@ -80,7 +81,7 @@ describe('Users', () => {
       chai.request(server)
         .get('/api/users')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -93,7 +94,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -106,7 +107,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('array');
           res.body.length.should.be.eql(3);
           users = res.body;
@@ -121,7 +122,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           const user = <IUser> res.body.user;
           user.name.should.be.eql(users[1].name);
@@ -135,7 +136,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           const user = <IUser> res.body.user;
           user.name.should.be.eql(users[1].name);
@@ -149,7 +150,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -162,10 +163,10 @@ describe('Users', () => {
     it('should allow unauthenticated users to create a user', (done: Function) => {
       chai.request(server)
         .post('/api/signup/')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.CREATED);
+          res.should.have.status(CREATED);
           res.body.should.be.a('object');
           res.body.user.email.should.be.eql(email);
           done();
@@ -175,10 +176,10 @@ describe('Users', () => {
     it('should not allow you to create an existing user', (done: Function) => {
       chai.request(server)
         .post('/api/signup/')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
+          res.should.have.status(UNPROCESSABLE_ENTITY);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -192,7 +193,7 @@ describe('Users', () => {
         .set('x-access-token', johnnyToken)
         .send({ email: 'my.ohmy@email.com', password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -204,10 +205,10 @@ describe('Users', () => {
     it('should return false for unauthenticated users', (done: Function) => {
       chai.request(server)
         .post('/api/users/')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: 'Who.Cares@GMAIL.com', password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -221,7 +222,7 @@ describe('Users', () => {
         .set('x-access-token', johnnyToken)
         .send({ email: 'Who.Cares@GMAIL.com', password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.METHOD_NOT_ALLOWED);
+          res.should.have.status(METHOD_NOT_ALLOWED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -236,7 +237,7 @@ describe('Users', () => {
         .set('x-access-token', adminToken)
         .send({ email: email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.CREATED);
+          res.should.have.status(CREATED);
           res.body.should.be.a('object');
           res.body.user.email.should.be.eql(email.toLowerCase());
           done();
@@ -250,7 +251,7 @@ describe('Users', () => {
         .set('x-access-token', adminToken)
         .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
+          res.should.have.status(UNPROCESSABLE_ENTITY);
           res.body.should.be.a('object');
           done();
         });
@@ -266,7 +267,7 @@ describe('Users', () => {
         .set('x-access-token', johnnyToken)
         .send({ name: newName })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           res.body.user.name.should.be.eql(newName);
           done();
@@ -276,13 +277,13 @@ describe('Users', () => {
     it('should not allow regular users to change their admin status', (done: Function) => {
       chai.request(server)
         .put('/api/users/' + users[1]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .send({ admin: true })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
-          res.body.should.not.have.admin;
+          res.body.user.admin.should.be.false;
           done();
         });
     });
@@ -295,7 +296,7 @@ describe('Users', () => {
         .set('x-access-token', johnnyToken)
         .send({ name: newName })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -305,11 +306,11 @@ describe('Users', () => {
     it('should allow admins to change an admin status', (done: Function) => {
       chai.request(server)
         .put('/api/users/' + users[2]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send({ admin: true })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           res.body.user.admin.should.be.true;
           done();
@@ -320,11 +321,11 @@ describe('Users', () => {
       const name = 'Another new Name';
       chai.request(server)
         .put('/api/users/' + users[2]._id)
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send({ name: name })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           res.body.user.name.should.be.eql(name);
           done();
@@ -337,7 +338,7 @@ describe('Users', () => {
       chai.request(server)
         .get('/api/profile')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -349,7 +350,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.user.email.should.be.eql(users[1].email);
           done();
         });
@@ -363,7 +364,7 @@ describe('Users', () => {
         .set('x-access-token', johnnyToken)
         .send( { name: name })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.user.name.should.be.eql(name);
           done();
         });
@@ -377,7 +378,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.INTERNAL_SERVER_ERROR);
+          res.should.have.status(INTERNAL_SERVER_ERROR);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -390,7 +391,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -404,7 +405,7 @@ describe('Users', () => {
         .set('x-access-token', adminToken)
         .send({ email: regularUser.email, password: 'wc', name: 'Who Cares' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.should.have.status(NO_CONTENT);
           res.body.should.be.empty;
           done();
         });
@@ -416,7 +417,7 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.should.have.status(NO_CONTENT);
           res.body.should.be.empty;
           done();
         });
@@ -428,13 +429,10 @@ describe('Users', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.should.have.status(NO_CONTENT);
           res.body.should.be.empty;
           done();
         });
     });
-
   });
-
-
 });

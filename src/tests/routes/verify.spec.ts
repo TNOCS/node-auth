@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as bcrypt from 'bcrypt';
 import { User, IUser, IUserModel } from '../../lib/models/user';
 import { server } from '../../example/server';
+import { OK, BAD_REQUEST } from 'http-status-codes';
 
 chai.should();
 chai.use(require('chai-http'));
@@ -63,7 +64,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -73,7 +74,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate?email=unknown')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -83,7 +84,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate?email=unknown@gmail.com')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -93,7 +94,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate?email=' + users[1].email)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           done();
         });
@@ -103,7 +104,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate?email=' + users[2].email)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -115,7 +116,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -125,7 +126,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get('/api/activate/12345678?t=1234')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -136,7 +137,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get(`/api/activate/${id}`)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -148,7 +149,7 @@ describe('Verify route', () => {
       chai.request(server)
         .get(`/api/activate/${id}?t=${token}`)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.BAD_REQUEST);
+          res.should.have.status(BAD_REQUEST);
           res.body.success.should.be.false;
           done();
         });
@@ -161,7 +162,7 @@ describe('Verify route', () => {
         chai.request(server)
           .get(`/api/activate/${id}?t=${token}`)
           .end((err, res) => {
-            res.should.have.status(HTTPStatusCodes.OK);
+            res.should.have.status(OK);
             res.body.success.should.be.true;
             User.findById( id, (err, user) => {
               const json = <IUser>user.toJSON();

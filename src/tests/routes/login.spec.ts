@@ -1,3 +1,4 @@
+import { UNPROCESSABLE_ENTITY, UNAUTHORIZED, OK } from 'http-status-codes';
 process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
@@ -45,7 +46,18 @@ describe('Login', () => {
         verified: false,
         data: {}
       });
-      adminUser.save((err, res) => regularUser.save((e, r) => anotherUser.save((e, r) => done())));
+      const getAdminToken = (done: Function) => {
+        const email = 'Erik.Vullings@GMAIL.com';
+        chai.request(server)
+          .post('/api/login')
+          .set('content-type', 'application/json')
+          .send({ email: email, password: 'password' })
+          .end((err, res) => {
+            adminToken = res.body.token;
+            done();
+          });
+      };
+      adminUser.save((err, res) => regularUser.save((e, r) => anotherUser.save((e, r) => getAdminToken(done))));
     });
   });
 
@@ -54,7 +66,7 @@ describe('Login', () => {
       chai.request(server)
         .post('/api/login')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNPROCESSABLE_ENTITY);
+          res.should.have.status(UNPROCESSABLE_ENTITY);
           done();
         });
     });
@@ -62,10 +74,10 @@ describe('Login', () => {
     it('should not be able to login with an incorrect password', (done: Function) => {
       chai.request(server)
         .post('/api/login')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: 'Erik.Vullings@GMAIL.com', password: 'pwd' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.should.be.a('object');
           res.body.success.should.be.false;
           done();
@@ -76,17 +88,16 @@ describe('Login', () => {
       const email = 'Erik.Vullings@GMAIL.com';
       chai.request(server)
         .post('/api/login')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: email, password: 'password' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           res.body.success.should.be.true;
-          res.body.should.have.token;
-          res.body.should.have.user;
-          res.body.user.should.not.have.password;
+          res.body.should.have.property('token');
+          res.body.should.have.property('user');
+          res.body.user.should.not.have.property('password');
           res.body.user.email.should.be.eql(email.toLowerCase());
-          adminToken = res.body.token;
           done();
         });
     });
@@ -97,7 +108,7 @@ describe('Login', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', 'abcdef' + adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           done();
         });
     });
@@ -108,9 +119,9 @@ describe('Login', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
-          res.body.should.have.token;
+          res.body.should.have.property('token');
           done();
         });
     });
@@ -119,15 +130,15 @@ describe('Login', () => {
       const email = 'john.smith@gmail.com';
       chai.request(server)
         .post('/api/login')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .send({ email: email, password: 'johnny' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.should.be.a('object');
           res.body.success.should.be.true;
-          res.body.should.have.token;
-          res.body.should.have.user;
-          res.body.user.should.not.have.password;
+          res.body.should.have.property('token');
+          res.body.should.have.property('user');
+          res.body.user.should.not.have.property('password');
           res.body.user.email.should.be.eql(email.toLowerCase());
           userToken = res.body.token;
           done();

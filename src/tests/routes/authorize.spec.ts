@@ -1,4 +1,5 @@
 process.env.NODE_ENV = 'test';
+import { UNAUTHORIZED, CREATED, NO_CONTENT, OK, FORBIDDEN, NOT_MODIFIED } from 'http-status-codes';
 import * as chai from 'chai';
 import { User, IUser, IUserModel } from '../../lib/models/user';
 import { Rule, PrivilegeRequest } from '../../lib/models/rule';
@@ -89,7 +90,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .get('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -101,7 +102,7 @@ describe('Authorizations route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           const rules: Rule[] = res.body.message;
           rules.length.should.be.eql(4);
@@ -115,7 +116,7 @@ describe('Authorizations route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', adminToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           const rules: Rule[] = res.body.message;
           rules[0].subject.admin.should.be.true;
@@ -130,7 +131,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .post('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -142,7 +143,7 @@ describe('Authorizations route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -155,7 +156,7 @@ describe('Authorizations route', () => {
         .set('x-access-token', johnnyToken)
         .send({ whatever: true, interests: 'you' })
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -178,7 +179,7 @@ describe('Authorizations route', () => {
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -202,9 +203,52 @@ describe('Authorizations route', () => {
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.CREATED);
+          res.should.have.status(CREATED);
           res.body.success.should.be.true;
           done();
+        });
+    });
+
+    it('should not create new rules when you already have permission', (done: Function) => {
+      const newPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'monty.python@gmail.com'
+        },
+        action: Action.Manage,
+        resource: {
+          articleID: 'johnny_article'
+        },
+        decision: Decision.Permit,
+      };
+      const unneededPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'monty.python@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: 'johnny_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/json')
+        .set('x-access-token', johnnyToken)
+        .send(newPrivilege)
+        .end((err, res) => {
+          res.should.have.status(CREATED);
+          res.body.success.should.be.true;
+          chai.request(server)
+            .post('/api/authorizations')
+            .set('content-type', 'application/json')
+            .set('x-access-token', johnnyToken)
+            .send(unneededPrivilege)
+            .end((err, res) => {
+              res.should.have.status(NOT_MODIFIED);
+              done();
+            });
         });
     });
 
@@ -222,11 +266,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .post('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -247,11 +291,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .post('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -272,11 +316,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .post('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -296,11 +340,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .post('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -320,11 +364,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .post('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.CREATED);
+          res.should.have.status(CREATED);
           res.body.success.should.be.true;
           newRule = res.body.message;
           done();
@@ -337,7 +381,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .put('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -349,7 +393,7 @@ describe('Authorizations route', () => {
         .set('content-type', 'application/x-www-form-urlencoded')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -369,11 +413,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .put('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -384,11 +428,11 @@ describe('Authorizations route', () => {
       newRule.subject.email = newEmail;
       chai.request(server)
         .put('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send(newRule)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.OK);
+          res.should.have.status(OK);
           res.body.success.should.be.true;
           newRule = res.body.message;
           newRule.subject.email.should.be.eql(newEmail);
@@ -403,7 +447,7 @@ describe('Authorizations route', () => {
       chai.request(server)
         .del('/api/authorizations')
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -412,10 +456,10 @@ describe('Authorizations route', () => {
     it('should block users without body', (done: Function) => {
       chai.request(server)
         .del('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.FORBIDDEN);
+          res.should.have.status(FORBIDDEN);
           res.body.success.should.be.false;
           done();
         });
@@ -435,11 +479,11 @@ describe('Authorizations route', () => {
       };
       chai.request(server)
         .del('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.UNAUTHORIZED);
+          res.should.have.status(UNAUTHORIZED);
           res.body.success.should.be.false;
           done();
         });
@@ -448,11 +492,11 @@ describe('Authorizations route', () => {
     it('should allow users with correct request and permissions', (done: Function) => {
       chai.request(server)
         .del('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
+        .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .send(newRule)
         .end((err, res) => {
-          res.should.have.status(HTTPStatusCodes.NO_CONTENT);
+          res.should.have.status(NO_CONTENT);
           done();
         });
     });
