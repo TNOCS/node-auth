@@ -4,6 +4,9 @@
         "declaration": true,
         "moduleResolution": "node",
         "target": "es5",
+        "lib": [
+            "es6"
+        ],
         "noImplicitAny": false,
         "sourceMap": true,
         "noUnusedLocals": true,
