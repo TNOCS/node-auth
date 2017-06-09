@@ -1,6 +1,4 @@
-import { Subject } from './subject';
-import { Action } from './action';
-import { Resource } from './resource';
+import { BaseRule } from './rule';
 
 export enum Decision {
   /**
@@ -17,11 +15,7 @@ export enum Decision {
   PartialPermit
 }
 
-export interface PermissionRequest {
-  subject?: Subject;
-  action?: Action;
-  resource?: Resource;
-}
+export interface PermissionRequest extends BaseRule {}
 
 // export interface PolicyDecision {
 //   (req: PermissionRequest): Decision;

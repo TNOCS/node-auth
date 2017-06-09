@@ -1,3 +1,4 @@
+import { NOT_MODIFIED, CREATED, OK, NO_CONTENT } from 'http-status-codes';
 import * as lokijs from 'lokijs';
 import { Rule } from '../models/rule';
 import { Subject } from '../models/subject';
@@ -45,18 +46,18 @@ export interface PolicyStore {
   /** Get an authenticated user's privileges */
   getPrivileges(subject: Subject): Rule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
-  getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: Rule) => Rule;
+  getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: Rule) => { rule: Rule, status: number };
   /** Save the database */
   save(callback: (err: Error) => void);
 }
 
 const sanatize = (name: string) => {
   return name.replace(/ /g, '_');
-}
+};
 
 const createPolicyName = (policySetName: string, policyName: string) => {
   return policySetName ? sanatize(`${policySetName}___${policyName}`) : policyName;
-}
+};
 
 /**
  * Load a policy into a new collection.
@@ -71,7 +72,7 @@ const loadPolicy = (db: Loki, policyFullName: string, p: Policy) => {
   p.rules.forEach(rule => {
     ruleCollection.insert(rule);
   });
-}
+};
 
 /**
  * Load a policy set.
@@ -88,7 +89,7 @@ const loadPolicySet = (db: Loki, psCollection: LokiCollection<PolicySetCollectio
     policySummaries.push({ name: policyFullName, desc: p.desc, combinator: p.combinator });
   });
   psCollection.insert({ name: ps.name, desc: ps.desc, combinator: ps.combinator, policies: policySummaries });
-}
+};
 
 /**
  * Create a collection of policy-sets, psCol.
@@ -103,7 +104,7 @@ const loadPolicySets = (db: Loki, policySets: PolicySet[]) => {
   policySets.forEach(ps => {
     loadPolicySet(db, psCol, ps);
   });
-}
+};
 
 /**
  * Match two arrays: each value in required should be present in the actual array.
@@ -119,7 +120,7 @@ const matchArrays = (required: any[], actual: any[]) => {
     return !isMatch;
   });
   return isMatch;
-}
+};
 
 /**
  * Match properties, i.e. check for a strict equivalence of strings and numbers, or arrays of strings and numbers.
@@ -158,7 +159,8 @@ const matchProperties = (ruleProp: boolean | string | number | string[] | number
       return ruleProp === reqProp;
     }
   }
-}
+};
+
 // if (ruleProp instanceof Array && reqProp instanceof Array) {
 //   return matchArrays(ruleProp, reqProp);
 // } else {
@@ -197,7 +199,7 @@ const isRuleRelevant = (rule: Rule, req: PermissionRequest): boolean => {
     }
   }
   return true;
-}
+};
 
 
 /**
@@ -213,88 +215,115 @@ const isSubjectRelevantForRule = (rule: Rule, req: PermissionRequest): boolean =
     if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
   }
   return true;
-}
+};
 
 const createPolicyStore = (db: Loki) => {
   const psCollection = db.getCollection<PolicySetCollection>('policy-sets');
+
+  const getPolicySets = () => {
+    const policySets = psCollection.find();
+    return policySets.map(ps => {
+      return {
+        name: ps.name,
+        combinator: ps.combinator
+      };
+    });
+  };
+
+  const getPolicySet = (name: string) => {
+    return psCollection.findOne({ name: name });
+  };
+
+  const getPolicyRules = (policyName: string, policySetName?: string) => {
+    return db.getCollection<Rule>(createPolicyName(policySetName, policyName)).find();
+  };
+
+  const getRuleResolver = (policyName: string, policySetName?: string) => {
+    const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
+    if (!ruleCollection) { return null; }
+    return (req: PermissionRequest) => {
+      return ruleCollection
+        .chain()
+        .where(r => isRuleRelevant(r, req))
+        .data();
+    };
+  };
+
+  const getPrivilegesResolver = (policySetName: string) => {
+    const policySet = psCollection.findOne({ name: policySetName });
+    return (req: PermissionRequest) => {
+      let privileges: Action = Action.None;
+      policySet.policies.some(p => {
+        const ruleCollection = db.getCollection<Rule>(p.name);
+        privileges = ruleCollection
+          .chain()
+          .where(r => isRuleRelevant(r, { subject: req.subject, resource: req.resource, action: r.action })) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
+          .data()
+          .reduce((old, cur) => { return old | cur.action; }, privileges);
+        return (privileges & Action.All) === Action.All;
+      });
+      return privileges;
+    };
+  };
+
+  const getPrivileges = (subject: Subject): Rule[] => {
+    const rules: Rule[] = [];
+    psCollection.find().forEach(ps => {
+      ps.policies.forEach(p => {
+        const ruleCollection = db.getCollection<Rule>(p.name);
+        ruleCollection
+          .chain()
+          .where(r => isSubjectRelevantForRule(r, { subject: subject }))
+          .data()
+          .forEach(r => rules.push(r));
+      });
+    });
+    return rules;
+  };
+
+  const getPolicyEditor = (policyName: string, policySetName: string) => {
+    const name = createPolicyName(policySetName, policyName);
+    const ruleCollection = db.getCollection<Rule>(name);
+    const getRules = (req: PermissionRequest) => {
+      return ruleCollection
+        .chain()
+        .where(r => isRuleRelevant(r, req)) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
+        .data();
+    };
+    if (ruleCollection === null) { throw new Error(`Cannot get rules for policy ${policyName}!`); }
+    return (change: 'add' | 'update' | 'delete', rule: Rule) => {
+      switch (change) {
+        case 'add':
+          // TODO Check rules: how to update existing rules when adding new ones.
+          const rules = getRules(rule);
+          if (rules.length > 0) { return { rule: rules[0], status: NOT_MODIFIED }; }
+          return { rule: ruleCollection.insert(rule), status: CREATED };
+        case 'update':
+          return { rule: ruleCollection.update(rule), status: OK };
+        case 'delete':
+          return { rule: ruleCollection.remove(rule), status: NO_CONTENT };
+        default:
+          throw new Error('Unknown change.');
+      }
+    };
+  };
+
+  const save = (done) => {
+    db.save(done);
+  };
+
   return {
     name: db.filename,
-    getPolicySets() {
-      const policySets = psCollection.find();
-      return policySets.map(ps => {
-        return {
-          name: ps.name,
-          combinator: ps.combinator
-        };
-      });
-    },
-    getPolicySet(name: string) {
-      return psCollection.findOne({ name: name });
-    },
-    getPolicyRules(policyName: string, policySetName?: string) {
-      return db.getCollection<Rule>(createPolicyName(policySetName, policyName)).find();
-    },
-    getRuleResolver(policyName: string, policySetName?: string) {
-      const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
-      if (!ruleCollection) { return null; }
-      return (req: PermissionRequest) => {
-        return ruleCollection
-          .chain()
-          .where(r => isRuleRelevant(r, req))
-          .data();
-      };
-    },
-    getPrivilegesResolver(policySetName: string) {
-      const policySet = psCollection.findOne({ name: policySetName });
-      return (req: PermissionRequest) => {
-        let privileges: Action = Action.None;
-        policySet.policies.some(p => {
-          const ruleCollection = db.getCollection<Rule>(p.name);
-          privileges = ruleCollection
-            .chain()
-            .where(r => isRuleRelevant(r, { subject: req.subject, resource: req.resource, action: r.action })) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
-            .data()
-            .reduce((old, cur) => { return old | cur.action; }, privileges);
-          return (privileges & Action.All) === Action.All;
-        });
-        return privileges;
-      };
-    },
-    getPrivileges(subject: Subject): Rule[] {
-      const rules: Rule[] = [];
-      psCollection.find().forEach(ps => {
-        ps.policies.forEach(p => {
-          const ruleCollection = db.getCollection<Rule>(p.name);
-          ruleCollection
-            .chain()
-            .where(r => isSubjectRelevantForRule(r, { subject: subject }))
-            .data()
-            .forEach(r => rules.push(r));
-        });
-      });
-      return rules;
-    },
-    getPolicyEditor(policyName: string, policySetName?: string) {
-      const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
-      if (ruleCollection === null) { throw new Error(`Cannot get rules for policy ${policyName}!`); }
-      return (change: 'add' | 'update' | 'delete', rule: Rule) => {
-        switch (change) {
-          case 'add':
-            return ruleCollection.insert(rule);
-          case 'update':
-            return ruleCollection.update(rule);
-          case 'delete':
-            return ruleCollection.remove(rule);
-          default:
-            throw new Error('Unknown change.');
-        }
-      };
-    },
-    save(done) {
-      db.save(done);
-    }
+    getPolicySets,
+    getPolicySet,
+    getPolicyRules,
+    getRuleResolver,
+    getPrivilegesResolver,
+    getPrivileges,
+    getPolicyEditor,
+    save
   };
-}
+};
 
 /**
  * PolicyStore factory: creates a new PolicyStore, either from file, or, if the
@@ -326,4 +355,4 @@ export const PolicyStoreFactory = (name = 'policies.json', callback: (err: Error
     loadPolicySets(db, policySets);
     callback(null, createPolicyStore(db));
   };
-}
+};

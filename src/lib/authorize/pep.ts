@@ -1,3 +1,4 @@
+import { FORBIDDEN } from 'http-status-codes';
 import { Request, Response, NextFunction } from 'express';
 import { PolicyStore } from '../authorize/policy-store';
 import { Action } from '../models/action';
@@ -70,13 +71,13 @@ export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
       if (generatePermissionRequest) {
         return (req, res, next) => {
           const permissionRequest = generatePermissionRequest(req);
-          return policyResolver(permissionRequest) ? next() : res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Access denied' });
+          return policyResolver(permissionRequest) ? next() : res.status(FORBIDDEN).json({ success: false, message: 'Access denied' });
         };
       } else {
         return (req, res, next) => {
           const permissionRequest = req['req'] || defaultPermissionRequest(req);
           addExtraAttributesToRequest(extraRequestAttributes, permissionRequest);
-          return policyResolver(permissionRequest) ? next() : res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Access denied' });
+          return policyResolver(permissionRequest) ? next() : res.status(FORBIDDEN).json({ success: false, message: 'Access denied' });
         };
       }
     }

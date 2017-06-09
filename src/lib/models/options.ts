@@ -1,3 +1,4 @@
+import { SendMailOptions, SentMessageInfo, Transport } from 'nodemailer';
 import { Request } from 'express';
 import { IUser } from './user';
 import { CRUD } from './crud';
@@ -48,7 +49,7 @@ export interface INodeAuthOptions {
     /** Base URL for verification emails, e.g. www.mydomain.com/api/activate */
     baseUrl: string;
     /** Nodemailer transport for sending emails. Please use ${URL} as a placeholder for the verification URL. */
-    mailService: nodemailer.Transport;
+    mailService: Transport;
     /**
       verifyMailOptions: {
             from: 'Do Not Reply <user@gmail.com>',
@@ -58,7 +59,7 @@ export interface INodeAuthOptions {
             text: 'Please verify your account by clicking the following link, or by copying and pasting it into your browser: ${URL}'
           },
      */
-    verifyMailOptions: nodemailer.SendMailOptions;
+    verifyMailOptions: SendMailOptions;
     /**
       confirmMailOptions: {
         from: 'Do Not Reply <user@gmail.com>',
@@ -67,8 +68,8 @@ export interface INodeAuthOptions {
         text: 'Your account has been successfully verified.'
       },
      */
-    confirmMailOptions: nodemailer.SendMailOptions;
-    verificationMessageSendCallback?: (err: Error, info: nodemailer.SentMessageInfo) => void;
-    confirmationMessageSendCallback?: (err: Error, info: nodemailer.SentMessageInfo) => void;
+    confirmMailOptions: SendMailOptions;
+    verificationMessageSendCallback?: (err: Error, info: SentMessageInfo) => void;
+    confirmationMessageSendCallback?: (err: Error, info: SentMessageInfo) => void;
   };
 }

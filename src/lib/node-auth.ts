@@ -1,3 +1,4 @@
+import { UNAUTHORIZED } from 'http-status-codes';
 // See also https://scotch.io/tutorials/authenticate-a-node-js-api-with-json-web-tokens
 // import { Application, Response, NextFunction, Router } from 'express';
 import * as express from 'express';
@@ -25,7 +26,7 @@ function authenticateUser(secretKey: string, blockUnauthenticatedUser = true) {
   const authnErrorHandler = blockUnauthenticatedUser
     ? (req: express.Request, res: express.Response, next: express.NextFunction, msg?: string) => {
       // AuthN failed, so return an error.
-      res.status(HTTPStatusCodes.UNAUTHORIZED).json({
+      res.status(UNAUTHORIZED).json({
         success: false,
         message: msg
       });
@@ -155,6 +156,12 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
   const authorizationRoute = getRoute(options.authorizations, '/authorizations');
   if (authorizationRoute) {
     apiRoutes.route(authorizationRoute)
+      .all((req, res, next) => {
+        // In case the body is not properly send as JSON, correct some issues.
+        if (req.body.hasOwnProperty('action') && typeof req.body['action'] === 'string') { req.body['action'] = +req.body['action']; }
+        if (req.body.hasOwnProperty('decision') && typeof req.body['decision'] === 'string') { req.body['decision'] = +req.body['decision']; }
+        next();
+       })
       .get(authzRoute.getPrivileges)
       .put(authzRoute.updatePrivileges)
       .delete(authzRoute.deletePrivileges)

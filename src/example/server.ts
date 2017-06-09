@@ -4,7 +4,7 @@ import { Application, Request } from 'express';
 import * as bodyParser from 'body-parser';
 import * as morgan from 'morgan';
 import * as mongoose from 'mongoose';
-import * as bluebird from 'bluebird';
+import * as Promise from 'bluebird';
 import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, PolicyStoreFactory, PolicyStore } from '../lib/index';
 
 const config = require('config'); // get our config file
@@ -14,7 +14,7 @@ export const server: Application = express();
 // configuration =========
 // =======================
 
-(<any>mongoose).Promise = bluebird;
+(<any>mongoose).Promise = Promise;
 const port = process.env.PORT || config.port || 3210;
 mongoose.connect(config.database); // connect to database
 // server.set("jwtAuthSecret", config.secret); // secret variable

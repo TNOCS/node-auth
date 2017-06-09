@@ -1,3 +1,4 @@
+import { UNAUTHORIZED, FORBIDDEN } from 'http-status-codes';
 import { Request, Response } from 'express';
 import { Subject } from '../models/subject';
 import { PolicyStore } from '../authorize/policy-store';
@@ -52,7 +53,7 @@ function deletePrivilege(newPrivilege: PrivilegeRequest) {
 function getPrivilegeRequest(req: Request, res: Response) {
   const newPrivilege: PrivilegeRequest = req['body'];
   if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
-    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
+    res.status(FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
     return null;
   }
   return newPrivilege;
@@ -71,7 +72,7 @@ export function init(options: INodeAuthOptions) {
 export function getPrivileges(req: Request, res: Response) {
   const user: Subject = req['user'];
   if (!user) {
-    res.status(HTTPStatusCodes.FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
+    res.status(FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
   } else {
     res.json({ success: true, message: policyStore.getPrivileges(user) });
   }
@@ -83,24 +84,26 @@ function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr:
   const newPrivilege = getPrivilegeRequest(req, res);
   if (!newPrivilege) { return; }
   if (change !== 'create' && !newPrivilege.hasOwnProperty('meta')) {
-    res.status(HTTPStatusCodes.UNAUTHORIZED).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+    res.status(UNAUTHORIZED).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
     return;
   }
   checkPermission(subject, newPrivilege, handler(newPrivilege));
 }
 
 export function createPrivileges(req: Request, res: Response) {
-  const handler = (newPrivilege: PrivilegeRequest) => {
+  const handler = (newPrivilegeReq: PrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
-        const rule = createPrivilege(newPrivilege);
-        if (rule) {
-          res.status(HTTPStatusCodes.CREATED).json({ success: true, message: rule });
+        const ruleStatus = createPrivilege(newPrivilegeReq);
+        if (ruleStatus) {
+          res
+            .status(ruleStatus.status) // rule === newPrivilegeReq ? NOT_MODIFIED :
+            .json({ success: true, message: ruleStatus.rule });
         } else {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+          res.status(UNAUTHORIZED).json(msg);
         }
       } else {
-        res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        res.status(UNAUTHORIZED).json(msg);
       }
     };
   };
@@ -111,14 +114,14 @@ export function updatePrivileges(req: Request, res: Response) {
   const handler = (newPrivilege: PrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
-        const rule = updatePrivilege(newPrivilege);
-        if (rule) {
-          res.json({ success: true, message: rule });
+        const ruleStatus = updatePrivilege(newPrivilege);
+        if (ruleStatus) {
+          res.json({ success: true, message: ruleStatus.rule });
         } else {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+          res.status(UNAUTHORIZED).json(msg);
         }
       } else {
-        res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        res.status(UNAUTHORIZED).json(msg);
       }
     };
   };
@@ -129,14 +132,14 @@ export function deletePrivileges(req: Request, res: Response) {
   const handler = (newPrivilege: PrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
-        const rule = deletePrivilege(newPrivilege);
-        if (!rule) {
-          res.status(HTTPStatusCodes.NO_CONTENT).end();
+        const ruleStatus = deletePrivilege(newPrivilege);
+        if (ruleStatus) {
+          res.status(ruleStatus.status).end();
         } else {
-          res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+          res.status(UNAUTHORIZED).json(msg);
         }
       } else {
-        res.status(HTTPStatusCodes.UNAUTHORIZED).json(msg);
+        res.status(UNAUTHORIZED).json(msg);
       }
     };
   };
