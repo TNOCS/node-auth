@@ -105,7 +105,7 @@ describe('Authorizations route', () => {
           res.should.have.status(OK);
           res.body.success.should.be.true;
           const rules: Rule[] = res.body.message;
-          rules.length.should.be.eql(4);
+          rules.length.should.be.eql(5);
           done();
         });
     });
@@ -247,6 +247,51 @@ describe('Authorizations route', () => {
             .send(unneededPrivilege)
             .end((err, res) => {
               res.should.have.status(NOT_MODIFIED);
+              done();
+            });
+        });
+    });
+
+    it('should update existing rules when you increase a privilege', (done: Function) => {
+      const firstPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'flying.circus@gmail.com'
+        },
+        action: Action.Read,
+        resource: {
+          articleID: 'monty_article'
+        },
+        decision: Decision.Permit
+      };
+      const secondPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'flying.circus@gmail.com'
+        },
+        action: Action.Update,
+        resource: {
+          articleID: 'monty_article'
+        },
+        decision: Decision.Permit,
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/json')
+        .set('x-access-token', johnnyToken)
+        .send(firstPrivilege)
+        .end((err, res) => {
+          res.should.have.status(CREATED);
+          res.body.success.should.be.true;
+          chai.request(server)
+            .post('/api/authorizations')
+            .set('content-type', 'application/json')
+            .set('x-access-token', johnnyToken)
+            .send(secondPrivilege)
+            .end((err, res) => {
+              res.should.have.status(CREATED);
+              res.body.success.should.be.true;
+              res.body.message.action.should.eql(Action.Read | Action.Update);
               done();
             });
         });

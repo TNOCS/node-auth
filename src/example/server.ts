@@ -141,6 +141,13 @@ PolicyStoreFactory('example-policies.json', callback, [{
         articleID: ['johnny_article']
       }
     }, {
+      subject: { email: 'john.smith@gmail.com' },
+      action: Action.Manage,
+      decision: Decision.Permit,
+      resource: {
+        articleID: ['monty_article']
+      }
+    }, {
       subject: { _id: '456' },
       action: Action.Author,
       decision: Decision.Permit,

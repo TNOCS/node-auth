@@ -180,10 +180,11 @@ const matchProperties = (ruleProp: boolean | string | number | string[] | number
  * - Can we replace the rule in the DB with a function that does the same?
  * @param {Rule} rule
  * @param {PermissionRequest} req
+ * @param {boolean} checkAction [true] also check the action. When false, ignore the value of the action.
  * @returns {boolean}
  */
-const isRuleRelevant = (rule: Rule, req: PermissionRequest): boolean => {
-  if (rule.action) {
+const isRuleRelevant = (rule: Rule, req: PermissionRequest, checkAction = true): boolean => {
+  if (rule.action && checkAction) {
     if (!req.action || !((req.action & rule.action) === req.action)) { return false; }
   }
   if (rule.subject) {
@@ -287,7 +288,7 @@ const createPolicyStore = (db: Loki) => {
     const getRules = (req: PermissionRequest) => {
       return ruleCollection
         .chain()
-        .where(r => isRuleRelevant(r, req)) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
+        .where(r => isRuleRelevant(r, req, false)) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
         .data();
     };
     if (ruleCollection === null) { throw new Error(`Cannot get rules for policy ${policyName}!`); }
@@ -296,7 +297,17 @@ const createPolicyStore = (db: Loki) => {
         case 'add':
           // TODO Check rules: how to update existing rules when adding new ones.
           const rules = getRules(rule);
-          if (rules.length > 0) { return { rule: rules[0], status: NOT_MODIFIED }; }
+          if (rules.length > 0) {
+            // Relevant rules (with the same subject/resource) are found
+            if (rules.reduce((p, r) => { return p || ((r.action & rule.action) === rule.action); }, false)) {
+              // The newly requested action is already contained in the existing rules. Do not modify anything.
+              return { rule: null, status: NOT_MODIFIED };
+            } else {
+              // The newly requested action is not covered yet. Update the rule with the new action.
+              rules[0].action = rules[0].action | rule.action;
+              return { rule: ruleCollection.update(rules[0]), status: CREATED };
+            }
+          }
           return { rule: ruleCollection.insert(rule), status: CREATED };
         case 'update':
           return { rule: ruleCollection.update(rule), status: OK };
