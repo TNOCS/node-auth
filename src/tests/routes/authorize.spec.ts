@@ -6,7 +6,6 @@ import { IRule, IPrivilegeRequest } from '../../lib/models/rule';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models//action';
 import { server } from '../../example/server';
-import { IPermissionRequest } from "../../lib/index";
 
 chai.should();
 chai.use(require('chai-http'));
@@ -149,14 +148,15 @@ describe('Authorizations route', () => {
         });
     });
 
-    it('should block users with incomplete requests, e.g. missing policySet', (done: Function) => {
-      const newPrivilege: IRule = {
+    it('should allow users with correct requests', (done: Function) => {
+      const newPrivilege: IPrivilegeRequest = {
+        policySet: 'Main policy set',
         subject: {
           email: 'jane.doe@gmail.com'
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          articleID: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -166,17 +166,16 @@ describe('Authorizations route', () => {
         .set('x-access-token', johnnyToken)
         .send(newPrivilege)
         .end((err, res) => {
-          res.should.have.status(FORBIDDEN);
-          res.body.success.should.be.false;
+          res.should.have.status(CREATED);
+          res.body.success.should.be.true;
           done();
         });
     });
 
-    it('should allow users with correct requests', (done: Function) => {
+    it('should allow users with correct requests WITHOUT specifying the policy set to use', (done: Function) => {
       const newPrivilege: IPrivilegeRequest = {
-        policySet: 'Main policy set',
         subject: {
-          email: 'jane.doe@gmail.com'
+          email: 'jonas.doe@gmail.com'
         },
         action: Action.Read,
         resource: {
@@ -286,7 +285,6 @@ describe('Authorizations route', () => {
 
     it('should update existing rules when you DECREASE a privilege', (done: Function) => {
       const firstPrivilege: IPrivilegeRequest = {
-        policySet: 'Main policy set',
         subject: {
           email: 'fawlty.towers@gmail.com'
         },
@@ -297,7 +295,6 @@ describe('Authorizations route', () => {
         decision: Decision.Permit
       };
       const deletedPrivilege: IPrivilegeRequest = {
-        policySet: 'Main policy set',
         subject: {
           email: 'fawlty.towers@gmail.com'
         },
@@ -593,25 +590,4 @@ describe('Authorizations route', () => {
         done();
       });
   });
-
-  it('should return resource privileges for authenticated users', (done: Function) => {
-    const permissionRequest: IPermissionRequest = {
-      resource: {
-        articleID: 'johnny_article'
-      }
-    };
-    chai.request(server)
-      .get('/api/authorizations')
-      .set('content-type', 'application/json')
-      .set('x-access-token', johnnyToken)
-      .send(permissionRequest)
-      .end((err, res) => {
-        res.should.have.status(OK);
-        res.body.success.should.be.true;
-        const rules: IRule[] = res.body.message;
-        rules.length.should.be.eql(5);
-        done();
-      });
-  });
-
 });

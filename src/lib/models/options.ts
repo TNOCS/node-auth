@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { IUser } from './user';
 import { CRUD } from './crud';
 // import { PolicyStore } from '../authorize/policy-store';
-import { PolicyStore } from '../authorize/policy-store';
+import { IPolicyStore } from '../authorize/policy-store';
 
 export interface INodeAuthOptions {
   /** The secret for encrypting and decrypting the JWT */
@@ -34,7 +34,7 @@ export interface INodeAuthOptions {
   /** The authorization route, default /api/authorizations. If false, don't create it. */
   authorizations?: string | boolean;
   /** Required only if you would like to use /api/authorizations */
-  policyStore?: PolicyStore;
+  policyStore?: IPolicyStore;
   /** List of all users (only accessible to admins), default /api/users. If false, don't create it. */
   users?: string;
   /**

@@ -1,16 +1,17 @@
 import { IRule } from './rule';
 import { DecisionCombinator } from './decision-combinator';
 
-export interface PolicyBase {
+export interface IPolicyBase {
   name: string;
   desc?: string;
   combinator: DecisionCombinator;
+  isDefault?: boolean;
 }
 
-export interface Policy extends PolicyBase {
+export interface IPolicy extends IPolicyBase {
   rules: IRule[];
 }
 
-export interface PolicySet extends PolicyBase {
-  policies: Policy[];
+export interface IPolicySet extends IPolicyBase {
+  policies: IPolicy[];
 }

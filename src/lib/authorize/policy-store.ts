@@ -3,41 +3,28 @@ import * as lokijs from 'lokijs';
 import { IRule } from '../models/rule';
 import { Subject } from '../models/subject';
 import { IPermissionRequest } from '../models/decision';
-import { PolicySet, Policy, PolicyBase } from '../models/policy';
+import { IPolicySet, IPolicy, IPolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { Action } from '../models/action';
 import { Decision } from '../models/decision';
 
-/**
- * A summary of the properties used for subject, action and resource,
- * so we can more quickly filter the relevant rules.
- *
- * @type {{
- *       subject: string[];
- *       action: Action;
- *       resource: string[];
- *     }}
- */
-export interface UsedKeys {
-  policyName: string;
-  subjectKeys: string[];
-  action: Action;
-  resourceKeys: string[];
+export interface IPolicySetCollection extends IPolicyBase {
+  policies: IPolicyBase[];
 }
 
-export interface PolicySetCollection extends PolicyBase {
-  policies: PolicyBase[];
+export interface IPolicySetDescription {
+  name: string;
+  isDefault: boolean;
+  combinator: DecisionCombinator;
 }
 
-export interface PolicyStore {
+export interface IPolicyStore {
   name: string;
   /** Return all policy sets */
-  getPolicySets(): {
-    name: string;
-    combinator: DecisionCombinator;
-  }[];
+  getPolicySets(): IPolicySetDescription[];
+  getDefaultPolicySet(): IPolicySetDescription;
   /** Return one policy set by name */
-  getPolicySet(name: string): PolicySetCollection;
+  getPolicySet(name: string): IPolicySetCollection;
   /** Return all policy rules */
   getPolicyRules(policyName: string, policySetName?: string): IRule[];
   /** Returns a function that can be used to retreive relevant rules for the current context. */
@@ -65,10 +52,10 @@ const createPolicyName = (policySetName: string, policyName: string) => {
  *
  * @param {Loki} db
  * @param {string} policyFullName
- * @param {Policy} p
+ * @param {IPolicy} p
  * @returns
  */
-const loadPolicy = (db: Loki, policyFullName: string, p: Policy) => {
+const loadPolicy = (db: Loki, policyFullName: string, p: IPolicy) => {
   const ruleCollection = db.addCollection<IRule>(policyFullName);
   p.rules.forEach(rule => {
     ruleCollection.insert(rule);
@@ -79,17 +66,17 @@ const loadPolicy = (db: Loki, policyFullName: string, p: Policy) => {
  * Load a policy set.
  *
  * @param {Loki} db
- * @param {LokiCollection<PolicySetCollection>} psCol
- * @param {PolicySet} ps
+ * @param {LokiCollection<IPolicySetCollection>} psCol
+ * @param {IPolicySet} ps
  */
-const loadPolicySet = (db: Loki, psCollection: LokiCollection<PolicySetCollection>, ps: PolicySet) => {
-  const policySummaries: PolicyBase[] = [];
+const loadPolicySet = (db: Loki, psCollection: LokiCollection<IPolicySetCollection>, ps: IPolicySet) => {
+  const policySummaries: IPolicyBase[] = [];
   ps.policies.forEach(p => {
     const policyFullName = createPolicyName(ps.name, p.name);
     loadPolicy(db, policyFullName, p);
-    policySummaries.push({ name: policyFullName, desc: p.desc, combinator: p.combinator });
+    policySummaries.push({ name: policyFullName, desc: p.desc, combinator: p.combinator, isDefault: p.isDefault });
   });
-  psCollection.insert({ name: ps.name, desc: ps.desc, combinator: ps.combinator, policies: policySummaries });
+  psCollection.insert({ name: ps.name, desc: ps.desc, isDefault: ps.isDefault, combinator: ps.combinator, policies: policySummaries });
 };
 
 /**
@@ -98,10 +85,10 @@ const loadPolicySet = (db: Loki, psCollection: LokiCollection<PolicySetCollectio
  * Create a collection for each policy, and add all rules to the policy collection.
  *
  * @param {Loki} db
- * @param {PolicySet[]} policySets
+ * @param {IPolicySet[]} policySets
  */
-const loadPolicySets = (db: Loki, policySets: PolicySet[]) => {
-  const psCol = db.addCollection<PolicySetCollection>('policy-sets');
+const loadPolicySets = (db: Loki, policySets: IPolicySet[]) => {
+  const psCol = db.addCollection<IPolicySetCollection>('policy-sets');
   policySets.forEach(ps => {
     loadPolicySet(db, psCol, ps);
   });
@@ -220,16 +207,34 @@ const isSubjectRelevantForRule = (rule: IRule, req: IPermissionRequest): boolean
 };
 
 const createPolicyStore = (db: Loki) => {
-  const psCollection = db.getCollection<PolicySetCollection>('policy-sets');
+  const psCollection = db.getCollection<IPolicySetCollection>('policy-sets');
 
+  /**
+   * Returns all policy sets.
+   *
+   * @returns
+   */
   const getPolicySets = () => {
     const policySets = psCollection.find();
     return policySets.map(ps => {
-      return {
+      return <IPolicySetDescription>{
         name: ps.name,
+        isDefault: ps.isDefault,
         combinator: ps.combinator
       };
     });
+  };
+
+  /**
+   * Get the default policy set, so users of the API do not need to specify it explicitly.
+   * Returns the first policy set where isDefault = true, or otherwise the first policy set.
+   *
+   * @returns
+   */
+  const getDefaultPolicySet = () => {
+    const ps = getPolicySets();
+    const filtered = ps.filter(p => p.isDefault);
+    return filtered.length > 0 ? filtered[0] : ps[0];
   };
 
   const getPolicySet = (name: string) => {
@@ -303,7 +308,7 @@ const createPolicyStore = (db: Loki) => {
             // Relevant rules (with the same subject/resource) are found
             if (rules.reduce((p, r) => { return p || ((r.action & rule.action) === rule.action); }, false)) {
               // The newly requested action is already contained in the existing rules.
-              if (rule.decision === Decision.Permit ) {
+              if (rule.decision === Decision.Permit) {
                 // Do not modify anything.
                 return { rule: null, status: NOT_MODIFIED };
               } else {
@@ -333,6 +338,7 @@ const createPolicyStore = (db: Loki) => {
 
   return {
     name: db.filename,
+    getDefaultPolicySet,
     getPolicySets,
     getPolicySet,
     getPolicyRules,
@@ -351,10 +357,10 @@ const createPolicyStore = (db: Loki) => {
  * @export
  * @param {string} [name='policies.json']
  * @param {((dataOrErr: any | Error) => void)} callback
- * @param {PolicySet[]} [policySets]
+ * @param {IPolicySet[]} [policySets]
  * @returns {PolicyStore}
  */
-export const PolicyStoreFactory = (name = 'policies.json', callback: (err: Error, policyStore: PolicyStore) => void, policySets?: PolicySet[]) => {
+export const PolicyStoreFactory = (name = 'policies.json', callback: (err: Error, policyStore: IPolicyStore) => void, policySets?: IPolicySet[]) => {
   const db = new lokijs(name, <LokiConfigureOptions>{
     autoload: policySets ? false : true,
     autosave: true,

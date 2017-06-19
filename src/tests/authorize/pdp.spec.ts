@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
+import { IPolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
 import { PolicyDecisionPoint, initPDP } from '../../lib/authorize/pdp';
@@ -10,11 +10,11 @@ import { PolicyDecisionPoint, initPDP } from '../../lib/authorize/pdp';
 chai.should();
 
 describe('The PolicyDecisionPoint', () => {
-  let policyStore: PolicyStore;
+  let policyStore: IPolicyStore;
   let pdp: PolicyDecisionPoint;
 
   before(done => {
-    const callback = (err: Error, ps: PolicyStore) => {
+    const callback = (err: Error, ps: IPolicyStore) => {
       if (err) { throw err; }
       policyStore = ps;
       pdp = initPDP(policyStore);

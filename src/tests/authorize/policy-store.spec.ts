@@ -2,17 +2,17 @@ process.env.NODE_ENV = 'test';
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
+import { IPolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
 
 chai.should();
 
 describe('The PolicyStore', () => {
-  let policyStore: PolicyStore;
+  let policyStore: IPolicyStore;
 
   before(done => {
-    const callback = (err: Error, ps: PolicyStore) => {
+    const callback = (err: Error, ps: IPolicyStore) => {
       if (err) { throw err; }
       policyStore = ps;
       done();

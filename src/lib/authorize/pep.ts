@@ -1,6 +1,6 @@
 import { FORBIDDEN } from 'http-status-codes';
 import { Request, Response, NextFunction } from 'express';
-import { PolicyStore } from '../authorize/policy-store';
+import { IPolicyStore } from '../authorize/policy-store';
 import { Action } from '../models/action';
 import { IBaseRule } from '../models/rule';
 import { IPermissionRequest } from '../models/decision';
@@ -62,7 +62,7 @@ function defaultPermissionRequest(req: Request) {
   return <IPermissionRequest> { subject: req['user'], action: action, resource: req.params };
 }
 
-export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
+export function initPEP(policyStore: IPolicyStore): PolicyEnforcementPoint {
   const pdp = initPDP(policyStore);
   return {
     getPolicyEnforcer(policySetName: string, extraRequestAttributes?: IBaseRule, generatePermissionRequest?: (req: Request) => IPermissionRequest) {

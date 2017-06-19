@@ -1,6 +1,6 @@
 import { Decision } from '../models/decision';
 import { DecisionCombinator } from '../models/decision-combinator';
-import { PolicyStore } from '../../lib/authorize/policy-store';
+import { IPolicyStore } from '../../lib/authorize/policy-store';
 import { IPermissionRequest } from '../models/decision';
 
 export interface PolicyDecisionPoint {
@@ -15,7 +15,7 @@ export interface PolicyDecisionPoint {
  * @param {DecisionCombinator} policyCombinator
  * @returns
  */
-function resolvePolicy(policyStore: PolicyStore, policyName: string, policyCombinator: DecisionCombinator) {
+function resolvePolicy(policyStore: IPolicyStore, policyName: string, policyCombinator: DecisionCombinator) {
   const resolveRules = policyStore.getRuleResolver(policyName);
   if (!resolveRules) { return null; }
   const isFirst = policyCombinator === 'first';
@@ -36,10 +36,10 @@ function resolvePolicy(policyStore: PolicyStore, policyName: string, policyCombi
  * a request that is protected by a particular policy set.
  *
  * @export
- * @param {PolicyStore} policyStore
+ * @param {IPolicyStore} policyStore
  * @returns
  */
-export function initPDP(policyStore: PolicyStore): PolicyDecisionPoint {
+export function initPDP(policyStore: IPolicyStore): PolicyDecisionPoint {
   return {
     /** A policy resolver helps you resolve permission requests. */
     getPolicyResolver(policySetName: string) {

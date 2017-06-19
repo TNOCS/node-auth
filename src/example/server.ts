@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser';
 import * as morgan from 'morgan';
 import * as mongoose from 'mongoose';
 import * as Promise from 'bluebird';
-import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, PolicyStoreFactory, PolicyStore } from '../lib/index';
+import { IUser, CRUD, Action, Decision, NodeAuth, INodeAuthOptions, PolicyStoreFactory, IPolicyStore } from '../lib/index';
 
 const config = require('config'); // get our config file
 export const server: Application = express();
@@ -48,9 +48,9 @@ server.get('/', (req, res) => {
   res.send('Hello! The API is at http://localhost:' + port + '/api');
 });
 
-let policyStore: PolicyStore;
+let policyStore: IPolicyStore;
 
-const callback = (err: Error, ps: PolicyStore) => {
+const callback = (err: Error, ps: IPolicyStore) => {
   if (err) { throw err; }
   policyStore = ps;
 
@@ -107,6 +107,7 @@ const callback = (err: Error, ps: PolicyStore) => {
 
 PolicyStoreFactory('example-policies.json', callback, [{
   name: 'Main policy set',
+  isDefault: true,
   combinator: 'first',
   policies: [{
     name: 'admins rule',

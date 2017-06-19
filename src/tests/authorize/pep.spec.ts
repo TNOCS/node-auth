@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Request } from 'express';
-import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
+import { IPolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
 import { IPermissionRequest } from '../../lib/models/decision';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
@@ -12,7 +12,7 @@ import { PolicyEnforcementPoint, initPEP } from '../../lib/authorize/pep';
 chai.should();
 
 describe('The PolicyEnforcementPoint', () => {
-  let policyStore: PolicyStore;
+  let policyStore: IPolicyStore;
   let pep: PolicyEnforcementPoint;
   let server: sinon.SinonFakeServer;
 
@@ -25,7 +25,7 @@ describe('The PolicyEnforcementPoint', () => {
   });
 
   before(done => {
-    const callback = (err: Error, ps: PolicyStore) => {
+    const callback = (err: Error, ps: IPolicyStore) => {
       if (err) { throw err; }
       policyStore = ps;
       pep = initPEP(policyStore);

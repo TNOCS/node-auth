@@ -1,7 +1,7 @@
 import { UNAUTHORIZED, FORBIDDEN } from 'http-status-codes';
 import { Request, Response } from 'express';
 import { Subject } from '../models/subject';
-import { PolicyStore } from '../authorize/policy-store';
+import { IPolicyStore } from '../authorize/policy-store';
 import { PolicyDecisionPoint, initPDP } from '../authorize/pdp';
 import { INodeAuthOptions } from '../models/options';
 import { IPrivilegeRequest } from '../models/rule';
@@ -9,7 +9,7 @@ import { CRUD } from '../models/crud';
 import { Action } from '../models/action';
 import { ResponseMessage } from '../models/response-message';
 
-export let policyStore: PolicyStore;
+export let policyStore: IPolicyStore;
 let pdp: PolicyDecisionPoint;
 
 function checkPermission(subject: Subject, newPrivilege: IPrivilegeRequest, callback: (message: ResponseMessage) => void) {
@@ -52,7 +52,8 @@ function deletePrivilege(newPrivilege: IPrivilegeRequest) {
 
 function getPrivilegeRequest(req: Request, res: Response) {
   const newPrivilege: IPrivilegeRequest = req['body'];
-  if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
+  newPrivilege.policySet = newPrivilege.policySet || policyStore.getDefaultPolicySet().name;
+  if (!newPrivilege || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
     res.status(FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
     return null;
   }
