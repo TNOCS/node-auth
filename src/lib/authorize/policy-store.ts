@@ -1,8 +1,8 @@
 import { NOT_MODIFIED, CREATED, OK, NO_CONTENT } from 'http-status-codes';
 import * as lokijs from 'lokijs';
-import { Rule } from '../models/rule';
+import { IRule } from '../models/rule';
 import { Subject } from '../models/subject';
-import { PermissionRequest } from '../models/decision';
+import { IPermissionRequest } from '../models/decision';
 import { PolicySet, Policy, PolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { Action } from '../models/action';
@@ -39,15 +39,15 @@ export interface PolicyStore {
   /** Return one policy set by name */
   getPolicySet(name: string): PolicySetCollection;
   /** Return all policy rules */
-  getPolicyRules(policyName: string, policySetName?: string): Rule[];
+  getPolicyRules(policyName: string, policySetName?: string): IRule[];
   /** Returns a function that can be used to retreive relevant rules for the current context. */
-  getRuleResolver(policyName: string, policySetName?: string): (permissionRequest: PermissionRequest) => Rule[];
+  getRuleResolver(policyName: string, policySetName?: string): (permissionRequest: IPermissionRequest) => IRule[];
   /** Returns a function that can be used to retreive a subject's privileges with respect to a certain context. Request action is ignored. */
-  getPrivilegesResolver(policyName: string, policySetName?: string): (permissionRequest: PermissionRequest) => Action;
+  getPrivilegesResolver(policyName: string, policySetName?: string): (permissionRequest: IPermissionRequest) => Action;
   /** Get an authenticated user's privileges */
-  getPrivileges(subject: Subject): Rule[];
+  getPrivileges(subject: Subject): IRule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
-  getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: Rule) => { rule: Rule, status: number };
+  getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: IRule) => { rule: IRule, status: number };
   /** Save the database */
   save(callback: (err: Error) => void);
 }
@@ -69,7 +69,7 @@ const createPolicyName = (policySetName: string, policyName: string) => {
  * @returns
  */
 const loadPolicy = (db: Loki, policyFullName: string, p: Policy) => {
-  const ruleCollection = db.addCollection<Rule>(policyFullName);
+  const ruleCollection = db.addCollection<IRule>(policyFullName);
   p.rules.forEach(rule => {
     ruleCollection.insert(rule);
   });
@@ -179,12 +179,12 @@ const matchProperties = (ruleProp: boolean | string | number | string[] | number
  * OPEN QUESTIONS
  * - When there are multiple rules that match, each giving the subject different privileges, do we still return the first? E.g. when a subject has multiple roles. Currently, this is the case.
  * - Can we replace the rule in the DB with a function that does the same?
- * @param {Rule} rule
- * @param {PermissionRequest} req
+ * @param {IRule} rule
+ * @param {IPermissionRequest} req
  * @param {boolean} checkAction [true] also check the action. When false, ignore the value of the action.
  * @returns {boolean}
  */
-const isRuleRelevant = (rule: Rule, req: PermissionRequest, checkAction = true): boolean => {
+const isRuleRelevant = (rule: IRule, req: IPermissionRequest, checkAction = true): boolean => {
   if (rule.action && checkAction) {
     if (!req.action || !((req.action & rule.action) === req.action)) { return false; }
   }
@@ -207,11 +207,11 @@ const isRuleRelevant = (rule: Rule, req: PermissionRequest, checkAction = true):
 /**
  * Checks if the rule is relevant for a certain subject.
  *
- * @param {Rule} rule
- * @param {PermissionRequest} req
+ * @param {IRule} rule
+ * @param {IPermissionRequest} req
  * @returns {boolean}
  */
-const isSubjectRelevantForRule = (rule: Rule, req: PermissionRequest): boolean => {
+const isSubjectRelevantForRule = (rule: IRule, req: IPermissionRequest): boolean => {
   if (!rule.subject || !req.subject) { return false; }
   for (const key in rule.subject) {
     if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
@@ -237,13 +237,13 @@ const createPolicyStore = (db: Loki) => {
   };
 
   const getPolicyRules = (policyName: string, policySetName?: string) => {
-    return db.getCollection<Rule>(createPolicyName(policySetName, policyName)).find();
+    return db.getCollection<IRule>(createPolicyName(policySetName, policyName)).find();
   };
 
   const getRuleResolver = (policyName: string, policySetName?: string) => {
-    const ruleCollection = db.getCollection<Rule>(createPolicyName(policySetName, policyName));
+    const ruleCollection = db.getCollection<IRule>(createPolicyName(policySetName, policyName));
     if (!ruleCollection) { return null; }
-    return (req: PermissionRequest) => {
+    return (req: IPermissionRequest) => {
       return ruleCollection
         .chain()
         .where(r => isRuleRelevant(r, req))
@@ -253,11 +253,12 @@ const createPolicyStore = (db: Loki) => {
 
   const getPrivilegesResolver = (policySetName: string) => {
     const policySet = psCollection.findOne({ name: policySetName });
-    return (req: PermissionRequest) => {
+    return (req: IPermissionRequest) => {
       let privileges: Action = Action.None;
       policySet.policies.some(p => {
-        const ruleCollection = db.getCollection<Rule>(p.name);
-        privileges = ruleCollection
+        const ruleCollection = db.getCollection<IRule>(p.name);
+        // privileges
+        privileges = <Action>ruleCollection
           .chain()
           .where(r => isRuleRelevant(r, { subject: req.subject, resource: req.resource, action: r.action })) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
           .data()
@@ -268,11 +269,11 @@ const createPolicyStore = (db: Loki) => {
     };
   };
 
-  const getPrivileges = (subject: Subject): Rule[] => {
-    const rules: Rule[] = [];
+  const getPrivileges = (subject: Subject): IRule[] => {
+    const rules: IRule[] = [];
     psCollection.find().forEach(ps => {
       ps.policies.forEach(p => {
-        const ruleCollection = db.getCollection<Rule>(p.name);
+        const ruleCollection = db.getCollection<IRule>(p.name);
         ruleCollection
           .chain()
           .where(r => isSubjectRelevantForRule(r, { subject: subject }))
@@ -285,15 +286,15 @@ const createPolicyStore = (db: Loki) => {
 
   const getPolicyEditor = (policyName: string, policySetName: string) => {
     const name = createPolicyName(policySetName, policyName);
-    const ruleCollection = db.getCollection<Rule>(name);
-    const getRules = (req: PermissionRequest) => {
+    const ruleCollection = db.getCollection<IRule>(name);
+    const getRules = (req: IPermissionRequest) => {
       return ruleCollection
         .chain()
         .where(r => isRuleRelevant(r, req, false)) // NOTE: We reset the req.action to the rule's action so we don't filter them out.
         .data();
     };
     if (ruleCollection === null) { throw new Error(`Cannot get rules for policy ${policyName}!`); }
-    return (change: 'add' | 'update' | 'delete', rule: Rule) => {
+    return (change: 'add' | 'update' | 'delete', rule: IRule) => {
       switch (change) {
         case 'add':
           // TODO Check rules: how to update existing rules when adding new ones.

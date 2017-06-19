@@ -2,10 +2,11 @@ process.env.NODE_ENV = 'test';
 import { UNAUTHORIZED, CREATED, NO_CONTENT, OK, FORBIDDEN, NOT_MODIFIED } from 'http-status-codes';
 import * as chai from 'chai';
 import { User, IUser, IUserModel } from '../../lib/models/user';
-import { Rule, PrivilegeRequest } from '../../lib/models/rule';
+import { IRule, IPrivilegeRequest } from '../../lib/models/rule';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models//action';
 import { server } from '../../example/server';
+import { IPermissionRequest } from "../../lib/index";
 
 chai.should();
 chai.use(require('chai-http'));
@@ -21,7 +22,7 @@ describe('Authorizations route', () => {
   let regularUser: IUserModel;
   let verifiedUser: IUserModel;
   let users: IUser[] = [];
-  let newRule: Rule;
+  let newRule: IRule;
 
   /**
    * Before we start the tests, we empty the database and
@@ -96,20 +97,6 @@ describe('Authorizations route', () => {
         });
     });
 
-    it('should return privileges for authenticated users', (done: Function) => {
-      chai.request(server)
-        .get('/api/authorizations')
-        .set('content-type', 'application/x-www-form-urlencoded')
-        .set('x-access-token', johnnyToken)
-        .end((err, res) => {
-          res.should.have.status(OK);
-          res.body.success.should.be.true;
-          const rules: Rule[] = res.body.message;
-          rules.length.should.be.eql(5);
-          done();
-        });
-    });
-
     it('should return privileges for admins', (done: Function) => {
       chai.request(server)
         .get('/api/authorizations')
@@ -118,7 +105,7 @@ describe('Authorizations route', () => {
         .end((err, res) => {
           res.should.have.status(OK);
           res.body.success.should.be.true;
-          const rules: Rule[] = res.body.message;
+          const rules: IRule[] = res.body.message;
           rules[0].subject.admin.should.be.true;
           rules.length.should.be.eql(4);
           done();
@@ -163,7 +150,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with incomplete requests, e.g. missing policySet', (done: Function) => {
-      const newPrivilege: Rule = {
+      const newPrivilege: IRule = {
         subject: {
           email: 'jane.doe@gmail.com'
         },
@@ -186,7 +173,7 @@ describe('Authorizations route', () => {
     });
 
     it('should allow users with correct requests', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'jane.doe@gmail.com'
@@ -210,7 +197,7 @@ describe('Authorizations route', () => {
     });
 
     it('should not create new rules when you already have permission', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'monty.python@gmail.com'
@@ -221,7 +208,7 @@ describe('Authorizations route', () => {
         },
         decision: Decision.Permit,
       };
-      const unneededPrivilege: PrivilegeRequest = {
+      const unneededPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'monty.python@gmail.com'
@@ -253,7 +240,7 @@ describe('Authorizations route', () => {
     });
 
     it('should update existing rules when you INCREASE a privilege', (done: Function) => {
-      const firstPrivilege: PrivilegeRequest = {
+      const firstPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'flying.circus@gmail.com'
@@ -264,7 +251,7 @@ describe('Authorizations route', () => {
         },
         decision: Decision.Permit
       };
-      const secondPrivilege: PrivilegeRequest = {
+      const secondPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'flying.circus@gmail.com'
@@ -298,7 +285,7 @@ describe('Authorizations route', () => {
     });
 
     it('should update existing rules when you DECREASE a privilege', (done: Function) => {
-      const firstPrivilege: PrivilegeRequest = {
+      const firstPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'fawlty.towers@gmail.com'
@@ -309,7 +296,7 @@ describe('Authorizations route', () => {
         },
         decision: Decision.Permit
       };
-      const deletedPrivilege: PrivilegeRequest = {
+      const deletedPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'fawlty.towers@gmail.com'
@@ -344,7 +331,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with unknown policy sets', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Whatever policy set you can think of',
         subject: {
           email: 'jane.doe@gmail.com'
@@ -368,7 +355,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with unknown policy', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         policy: 'pick one',
         subject: {
@@ -393,7 +380,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with unknown numeric policy', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         policy: 15,
         subject: {
@@ -418,7 +405,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with insufficient rights', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'jane.doe@gmail.com'
@@ -442,7 +429,7 @@ describe('Authorizations route', () => {
     });
 
     it('should allow admins to change permissions', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'jane.doe@gmail.com'
@@ -491,7 +478,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with incorrect request, i.e. missing metadata', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'janette.doe@gmail.com'
@@ -557,7 +544,7 @@ describe('Authorizations route', () => {
     });
 
     it('should block users with incorrect request, i.e. missing metadata', (done: Function) => {
-      const newPrivilege: PrivilegeRequest = {
+      const newPrivilege: IPrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
           email: 'janette.doe@gmail.com'
@@ -591,6 +578,40 @@ describe('Authorizations route', () => {
           done();
         });
     });
+  });
+
+  it('should return all privileges for authenticated users', (done: Function) => {
+    chai.request(server)
+      .get('/api/authorizations')
+      .set('content-type', 'application/json')
+      .set('x-access-token', johnnyToken)
+      .end((err, res) => {
+        res.should.have.status(OK);
+        res.body.success.should.be.true;
+        const rules: IRule[] = res.body.message;
+        rules.length.should.be.eql(5);
+        done();
+      });
+  });
+
+  it('should return resource privileges for authenticated users', (done: Function) => {
+    const permissionRequest: IPermissionRequest = {
+      resource: {
+        articleID: 'johnny_article'
+      }
+    };
+    chai.request(server)
+      .get('/api/authorizations')
+      .set('content-type', 'application/json')
+      .set('x-access-token', johnnyToken)
+      .send(permissionRequest)
+      .end((err, res) => {
+        res.should.have.status(OK);
+        res.body.success.should.be.true;
+        const rules: IRule[] = res.body.message;
+        rules.length.should.be.eql(5);
+        done();
+      });
   });
 
 });

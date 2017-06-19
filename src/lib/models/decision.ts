@@ -1,4 +1,4 @@
-import { BaseRule } from './rule';
+import { IBaseRule } from './rule';
 
 export enum Decision {
   /**
@@ -15,7 +15,7 @@ export enum Decision {
   PartialPermit
 }
 
-export interface PermissionRequest extends BaseRule {}
+export interface IPermissionRequest extends IBaseRule {}
 
 // export interface PolicyDecision {
 //   (req: PermissionRequest): Decision;

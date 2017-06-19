@@ -1,4 +1,4 @@
-import { Rule } from './rule';
+import { IRule } from './rule';
 import { DecisionCombinator } from './decision-combinator';
 
 export interface PolicyBase {
@@ -8,7 +8,7 @@ export interface PolicyBase {
 }
 
 export interface Policy extends PolicyBase {
-  rules: Rule[];
+  rules: IRule[];
 }
 
 export interface PolicySet extends PolicyBase {

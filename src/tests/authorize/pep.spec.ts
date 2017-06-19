@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Request } from 'express';
 import { PolicyStore, PolicyStoreFactory } from '../../lib/authorize/policy-store';
-import { PermissionRequest } from '../../lib/models/decision';
+import { IPermissionRequest } from '../../lib/models/decision';
 import { Decision } from '../../lib/models/decision';
 import { Action } from '../../lib/models/action';
 import { PolicyEnforcementPoint, initPEP } from '../../lib/authorize/pep';
@@ -236,7 +236,7 @@ describe('The PolicyEnforcementPoint', () => {
   it('should allow you to specify your own request generating function.', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, null, (req) => {
-      return <PermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { articleID: '123_article' } };
+      return <IPermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { articleID: '123_article' } };
     });
     const blocked = sinon.spy();
     const response = {

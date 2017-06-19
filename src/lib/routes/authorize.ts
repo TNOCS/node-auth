@@ -4,7 +4,7 @@ import { Subject } from '../models/subject';
 import { PolicyStore } from '../authorize/policy-store';
 import { PolicyDecisionPoint, initPDP } from '../authorize/pdp';
 import { INodeAuthOptions } from '../models/options';
-import { PrivilegeRequest } from '../models/rule';
+import { IPrivilegeRequest } from '../models/rule';
 import { CRUD } from '../models/crud';
 import { Action } from '../models/action';
 import { ResponseMessage } from '../models/response-message';
@@ -12,14 +12,14 @@ import { ResponseMessage } from '../models/response-message';
 export let policyStore: PolicyStore;
 let pdp: PolicyDecisionPoint;
 
-function checkPermission(subject: Subject, newPrivilege: PrivilegeRequest, callback: (message: ResponseMessage) => void) {
+function checkPermission(subject: Subject, newPrivilege: IPrivilegeRequest, callback: (message: ResponseMessage) => void) {
   const pr = pdp.getPolicyResolver(newPrivilege.policySet);
   if (!pr) { callback({ success: false, message: 'Insufficient rights' }); }
   const permit = pr({ subject: subject, action: Action.Manage, resource: newPrivilege.resource });
   callback(permit ? { success: true } : { success: false, message: 'Insufficient rights' });
 }
 
-function getPolicyEditor(newPrivilege: PrivilegeRequest) {
+function getPolicyEditor(newPrivilege: IPrivilegeRequest) {
   const policy = newPrivilege.policy || -1;
   if (typeof policy === 'number') {
     const policySet = policyStore.getPolicySet(newPrivilege.policySet);
@@ -32,26 +32,26 @@ function getPolicyEditor(newPrivilege: PrivilegeRequest) {
   }
 }
 
-function createPrivilege(newPrivilege: PrivilegeRequest) {
+function createPrivilege(newPrivilege: IPrivilegeRequest) {
   const policyEditor = getPolicyEditor(newPrivilege);
   if (!policyEditor) { return null; }
   return policyEditor('add', newPrivilege);
 }
 
-function updatePrivilege(newPrivilege: PrivilegeRequest) {
+function updatePrivilege(newPrivilege: IPrivilegeRequest) {
   const policyEditor = getPolicyEditor(newPrivilege);
   if (!policyEditor) { return null; }
   return policyEditor('update', newPrivilege);
 }
 
-function deletePrivilege(newPrivilege: PrivilegeRequest) {
+function deletePrivilege(newPrivilege: IPrivilegeRequest) {
   const policyEditor = getPolicyEditor(newPrivilege);
   if (!policyEditor) { return null; }
   return policyEditor('delete', newPrivilege);
 }
 
 function getPrivilegeRequest(req: Request, res: Response) {
-  const newPrivilege: PrivilegeRequest = req['body'];
+  const newPrivilege: IPrivilegeRequest = req['body'];
   if (!newPrivilege || !newPrivilege.policySet || !(newPrivilege.subject || newPrivilege.action || newPrivilege.resource)) {
     res.status(FORBIDDEN).json({ success: false, message: 'Unknown body, expected { subject, action, resource } message.' });
     return null;
@@ -78,7 +78,7 @@ export function getPrivileges(req: Request, res: Response) {
   }
 }
 
-function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr: PrivilegeRequest) => (msg: ResponseMessage) => void) {
+function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr: IPrivilegeRequest) => (msg: ResponseMessage) => void) {
   const subject: Subject = req['user'];
   if (!subject) { return; }
   const newPrivilege = getPrivilegeRequest(req, res);
@@ -91,7 +91,7 @@ function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr:
 }
 
 export function createPrivileges(req: Request, res: Response) {
-  const handler = (newPrivilegeReq: PrivilegeRequest) => {
+  const handler = (newPrivilegeReq: IPrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
         const ruleStatus = createPrivilege(newPrivilegeReq);
@@ -111,7 +111,7 @@ export function createPrivileges(req: Request, res: Response) {
 }
 
 export function updatePrivileges(req: Request, res: Response) {
-  const handler = (newPrivilege: PrivilegeRequest) => {
+  const handler = (newPrivilege: IPrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
         const ruleStatus = updatePrivilege(newPrivilege);
@@ -129,7 +129,7 @@ export function updatePrivileges(req: Request, res: Response) {
 }
 
 export function deletePrivileges(req: Request, res: Response) {
-  const handler = (newPrivilege: PrivilegeRequest) => {
+  const handler = (newPrivilege: IPrivilegeRequest) => {
     return (msg: ResponseMessage) => {
       if (msg.success) {
         const ruleStatus = deletePrivilege(newPrivilege);

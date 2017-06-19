@@ -2,15 +2,15 @@ import { FORBIDDEN } from 'http-status-codes';
 import { Request, Response, NextFunction } from 'express';
 import { PolicyStore } from '../authorize/policy-store';
 import { Action } from '../models/action';
-import { BaseRule } from '../models/rule';
-import { PermissionRequest } from '../models/decision';
+import { IBaseRule } from '../models/rule';
+import { IPermissionRequest } from '../models/decision';
 import { initPDP } from './pdp';
 
 export interface PolicyEnforcementPoint {
-  getPolicyEnforcer(policySetName: string, extraRequestAttributes?: BaseRule, generatePermissionRequest?: (req: Request) => PermissionRequest): (req: Request, res: Response, next: NextFunction) => void;
+  getPolicyEnforcer(policySetName: string, extraRequestAttributes?: IBaseRule, generatePermissionRequest?: (req: Request) => IPermissionRequest): (req: Request, res: Response, next: NextFunction) => void;
 }
 
-function addExtraAttributesToRequest(extraAttributes: BaseRule, req: PermissionRequest) {
+function addExtraAttributesToRequest(extraAttributes: IBaseRule, req: IPermissionRequest) {
   if (!extraAttributes) { return; }
   const subject = extraAttributes.subject;
   if (subject) {
@@ -41,7 +41,7 @@ function addExtraAttributesToRequest(extraAttributes: BaseRule, req: PermissionR
  * - resource: The request.params object
  *
  * @param {Request} req
- * @returns {PermissionRequest}
+ * @returns {IPermissionRequest}
  */
 function defaultPermissionRequest(req: Request) {
   let action: Action;
@@ -59,13 +59,13 @@ function defaultPermissionRequest(req: Request) {
       action = Action.Delete;
       break;
   }
-  return <PermissionRequest> { subject: req['user'], action: action, resource: req.params };
+  return <IPermissionRequest> { subject: req['user'], action: action, resource: req.params };
 }
 
 export function initPEP(policyStore: PolicyStore): PolicyEnforcementPoint {
   const pdp = initPDP(policyStore);
   return {
-    getPolicyEnforcer(policySetName: string, extraRequestAttributes?: BaseRule, generatePermissionRequest?: (req: Request) => PermissionRequest) {
+    getPolicyEnforcer(policySetName: string, extraRequestAttributes?: IBaseRule, generatePermissionRequest?: (req: Request) => IPermissionRequest) {
       const policyResolver = pdp.getPolicyResolver(policySetName);
       if (policyResolver === null) { throw new Error(`Policy ${policySetName} does not exist.`); }
       if (generatePermissionRequest) {
