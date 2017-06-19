@@ -252,7 +252,7 @@ describe('Authorizations route', () => {
         });
     });
 
-    it('should update existing rules when you increase a privilege', (done: Function) => {
+    it('should update existing rules when you INCREASE a privilege', (done: Function) => {
       const firstPrivilege: PrivilegeRequest = {
         policySet: 'Main policy set',
         subject: {
@@ -273,7 +273,7 @@ describe('Authorizations route', () => {
         resource: {
           articleID: 'monty_article'
         },
-        decision: Decision.Permit,
+        decision: Decision.Permit
       };
       chai.request(server)
         .post('/api/authorizations')
@@ -292,6 +292,52 @@ describe('Authorizations route', () => {
               res.should.have.status(CREATED);
               res.body.success.should.be.true;
               res.body.message.action.should.eql(Action.Read | Action.Update);
+              done();
+            });
+        });
+    });
+
+    it('should update existing rules when you DECREASE a privilege', (done: Function) => {
+      const firstPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'fawlty.towers@gmail.com'
+        },
+        action: Action.Read | Action.Update,
+        resource: {
+          articleID: 'monty_article'
+        },
+        decision: Decision.Permit
+      };
+      const deletedPrivilege: PrivilegeRequest = {
+        policySet: 'Main policy set',
+        subject: {
+          email: 'fawlty.towers@gmail.com'
+        },
+        action: Action.Update,
+        resource: {
+          articleID: 'monty_article'
+        },
+        decision: Decision.Deny // <= Here we remove the privilege
+      };
+      chai.request(server)
+        .post('/api/authorizations')
+        .set('content-type', 'application/json')
+        .set('x-access-token', johnnyToken)
+        .send(firstPrivilege)
+        .end((err, res) => {
+          res.should.have.status(CREATED);
+          res.body.success.should.be.true;
+          res.body.message.action.should.eql(Action.Read | Action.Update);
+          chai.request(server)
+            .post('/api/authorizations')
+            .set('content-type', 'application/json')
+            .set('x-access-token', johnnyToken)
+            .send(deletedPrivilege)
+            .end((err, res) => {
+              res.should.have.status(CREATED);
+              res.body.success.should.be.true;
+              res.body.message.action.should.eql(Action.Read);
               done();
             });
         });

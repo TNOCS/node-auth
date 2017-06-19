@@ -6,6 +6,7 @@ import { PermissionRequest } from '../models/decision';
 import { PolicySet, Policy, PolicyBase } from '../models/policy';
 import { DecisionCombinator } from '../models/decision-combinator';
 import { Action } from '../models/action';
+import { Decision } from '../models/decision';
 
 /**
  * A summary of the properties used for subject, action and resource,
@@ -300,8 +301,14 @@ const createPolicyStore = (db: Loki) => {
           if (rules.length > 0) {
             // Relevant rules (with the same subject/resource) are found
             if (rules.reduce((p, r) => { return p || ((r.action & rule.action) === rule.action); }, false)) {
-              // The newly requested action is already contained in the existing rules. Do not modify anything.
-              return { rule: null, status: NOT_MODIFIED };
+              // The newly requested action is already contained in the existing rules.
+              if (rule.decision === Decision.Permit ) {
+                // Do not modify anything.
+                return { rule: null, status: NOT_MODIFIED };
+              } else {
+                rules[0].action = rules[0].action ^ rule.action;
+                return { rule: ruleCollection.update(rules[0]), status: CREATED };
+              }
             } else {
               // The newly requested action is not covered yet. Update the rule with the new action.
               rules[0].action = rules[0].action | rule.action;
