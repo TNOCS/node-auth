@@ -12,7 +12,7 @@ import { ResponseMessage } from '../models/response-message';
 export let policyStore: IPolicyStore;
 let pdp: PolicyDecisionPoint;
 
-function checkPermission(subject: Subject, newPrivilege: IPrivilegeRequest, callback: (message: ResponseMessage) => void) {
+function checkSubjectHasManagementPermission(subject: Subject, newPrivilege: IPrivilegeRequest, callback: (message: ResponseMessage) => void) {
   const pr = pdp.getPolicyResolver(newPrivilege.policySet);
   if (!pr) { callback({ success: false, message: 'Insufficient rights' }); }
   const permit = pr({ subject: subject, action: Action.Manage, resource: newPrivilege.resource });
@@ -70,12 +70,26 @@ export function init(options: INodeAuthOptions) {
   pdp = initPDP(policyStore);
 }
 
-export function getPrivileges(req: Request, res: Response) {
+export function getSubjectPrivileges(req: Request, res: Response) {
   const user: Subject = req['user'];
   if (!user) {
     res.status(FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
   } else {
-    res.json({ success: true, message: policyStore.getPrivileges(user) });
+    res.json({ success: true, message: policyStore.getSubjectPrivileges(user) });
+  }
+}
+
+export function getResourcePrivileges(req: Request, res: Response) {
+  const subject: Subject = req['user'];
+  if (!subject) {
+    res.status(FORBIDDEN).json({ success: false, message: 'Service only available for authenticated users.' });
+  } else {
+    const newPrivilege = getPrivilegeRequest(req, res);
+    if (!newPrivilege) { return; }
+    checkSubjectHasManagementPermission(subject, newPrivilege, (msg: { success: boolean, message: string }) => {
+      if (!msg.success) { res.status(UNAUTHORIZED).json({ success: false, message: msg.message }); }
+    });
+    res.json({ success: true, message: policyStore.getResourcePrivileges(newPrivilege.resource) });
   }
 }
 
@@ -88,7 +102,7 @@ function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr:
     res.status(UNAUTHORIZED).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
     return;
   }
-  checkPermission(subject, newPrivilege, handler(newPrivilege));
+  checkSubjectHasManagementPermission(subject, newPrivilege, handler(newPrivilege));
 }
 
 export function createPrivileges(req: Request, res: Response) {

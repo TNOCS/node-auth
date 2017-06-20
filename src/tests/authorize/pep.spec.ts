@@ -74,14 +74,14 @@ describe('The PolicyEnforcementPoint', () => {
           action: Action.Manage,
           decision: Decision.Permit,
           resource: {
-            articleID: ['123_article']
+            id: '123_article'
           }
         }, {
           subject: { _id: '456' },
           action: Action.Author,
           decision: Decision.Permit,
           resource: {
-            articleID: ['456_article']
+            id: '456_article'
           }
         }]
       }]
@@ -119,7 +119,7 @@ describe('The PolicyEnforcementPoint', () => {
 
     next.reset();
     responseSpy.reset();
-    policyEnforcer(<any>{ method: 'DELETE', user: { admin: true }, params: { articleID: '123_article' } }, <any>response, <any>next);
+    policyEnforcer(<any>{ method: 'DELETE', user: { admin: true }, params: { id: '123_article' } }, <any>response, <any>next);
     next.calledOnce.should.be.true;
     responseSpy.calledOnce.should.be.false;
   });
@@ -149,25 +149,25 @@ describe('The PolicyEnforcementPoint', () => {
 
     passed.reset();
     blocked.reset();
-    policyEnforcer(<any>{ method: 'GET', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>passed);
+    policyEnforcer(<any>{ method: 'GET', user: { _id: '123' }, params: { id: '123_article' } }, <any>response, <any>passed);
     passed.calledOnce.should.be.true;
     blocked.calledOnce.should.be.false;
 
     passed.reset();
     blocked.reset();
-    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { articleID: '123_article' } }, <any>response, <any>passed);
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { id: '123_article' } }, <any>response, <any>passed);
     passed.calledOnce.should.be.true;
     blocked.calledOnce.should.be.false;
 
     passed.reset();
     blocked.reset();
-    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { articleID: ['123_article'] } }, <any>response, <any>passed);
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '123' }, params: { id: ['123_article'] } }, <any>response, <any>passed);
     passed.calledOnce.should.be.true;
     blocked.calledOnce.should.be.false;
 
     passed.reset();
     blocked.reset();
-    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { articleID: '123_article' } }, <any>response, <any>passed);
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { id: '123_article' } }, <any>response, <any>passed);
     passed.calledOnce.should.be.false;
     blocked.calledOnce.should.be.true;
   });
@@ -187,7 +187,7 @@ describe('The PolicyEnforcementPoint', () => {
     const passed = sinon.spy();
     passed.reset();
     blocked.reset();
-    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { articleID: ['123_article', '456_article'] } }, <any>response, <any>passed);
+    policyEnforcer(<any>{ method: 'PUT', user: { _id: '456' }, params: { id: ['123_article', '456_article'] } }, <any>response, <any>passed);
     passed.calledOnce.should.be.false;
     blocked.calledOnce.should.be.true;
   });
@@ -197,7 +197,7 @@ describe('The PolicyEnforcementPoint', () => {
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, {
       subject: { subscribed: true },
       action: Action.Update,
-      resource: { articleID: '123_article' }
+      resource: { id: '123_article' }
     });
     const blocked = sinon.spy();
     const response = {
@@ -236,7 +236,7 @@ describe('The PolicyEnforcementPoint', () => {
   it('should allow you to specify your own request generating function.', () => {
     const policySets = policyStore.getPolicySets();
     const policyEnforcer = pep.getPolicyEnforcer(policySets[1].name, null, (req) => {
-      return <IPermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { articleID: '123_article' } };
+      return <IPermissionRequest>{ subject: { _id: '123' }, action: Action.Delete, resource: { id: '123_article' } };
     });
     const blocked = sinon.spy();
     const response = {

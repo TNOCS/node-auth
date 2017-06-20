@@ -1,3 +1,4 @@
+import { Resource } from './../models/resource';
 import { NOT_MODIFIED, CREATED, OK, NO_CONTENT } from 'http-status-codes';
 import * as lokijs from 'lokijs';
 import { IRule } from '../models/rule';
@@ -32,7 +33,9 @@ export interface IPolicyStore {
   /** Returns a function that can be used to retreive a subject's privileges with respect to a certain context. Request action is ignored. */
   getPrivilegesResolver(policyName: string, policySetName?: string): (permissionRequest: IPermissionRequest) => Action;
   /** Get an authenticated user's privileges */
-  getPrivileges(subject: Subject): IRule[];
+  getSubjectPrivileges(subject: Subject): IRule[];
+  /** Get all privileges related to a particular resource */
+  getResourcePrivileges(resource: Resource): IRule[];
   /** Return a policy editor,which allows you to add, update and delete rules */
   getPolicyEditor(policyName: string, policySetName?: string): (change: 'add' | 'update' | 'delete', rule: IRule) => { rule: IRule, status: number };
   /** Save the database */
@@ -190,7 +193,6 @@ const isRuleRelevant = (rule: IRule, req: IPermissionRequest, checkAction = true
   return true;
 };
 
-
 /**
  * Checks if the rule is relevant for a certain subject.
  *
@@ -202,6 +204,21 @@ const isSubjectRelevantForRule = (rule: IRule, req: IPermissionRequest): boolean
   if (!rule.subject || !req.subject) { return false; }
   for (const key in rule.subject) {
     if (!matchProperties(rule.subject[key], req.subject[key])) { return false; };
+  }
+  return true;
+};
+
+/**
+ * Checks if the rule is relevant for a certain resource.
+ *
+ * @param {IRule} rule
+ * @param {IPermissionRequest} req
+ * @returns {boolean}
+ */
+const isResourceRelevantForRule = (rule: IRule, req: IPermissionRequest): boolean => {
+  if (!rule.resource || !req.resource) { return false; }
+  for (const key in rule.resource) {
+    if (!matchProperties(rule.resource[key], req.resource[key])) { return false; };
   }
   return true;
 };
@@ -274,7 +291,7 @@ const createPolicyStore = (db: Loki) => {
     };
   };
 
-  const getPrivileges = (subject: Subject): IRule[] => {
+  const getSubjectPrivileges = (subject: Subject): IRule[] => {
     const rules: IRule[] = [];
     psCollection.find().forEach(ps => {
       ps.policies.forEach(p => {
@@ -282,6 +299,21 @@ const createPolicyStore = (db: Loki) => {
         ruleCollection
           .chain()
           .where(r => isSubjectRelevantForRule(r, { subject: subject }))
+          .data()
+          .forEach(r => rules.push(r));
+      });
+    });
+    return rules;
+  };
+
+  const getResourcePrivileges = (resource: Resource): IRule[] => {
+    const rules: IRule[] = [];
+    psCollection.find().forEach(ps => {
+      ps.policies.forEach(p => {
+        const ruleCollection = db.getCollection<IRule>(p.name);
+        ruleCollection
+          .chain()
+          .where(r => isResourceRelevantForRule(r, { resource: resource }))
           .data()
           .forEach(r => rules.push(r));
       });
@@ -344,7 +376,8 @@ const createPolicyStore = (db: Loki) => {
     getPolicyRules,
     getRuleResolver,
     getPrivilegesResolver,
-    getPrivileges,
+    getSubjectPrivileges,
+    getResourcePrivileges,
     getPolicyEditor,
     save
   };

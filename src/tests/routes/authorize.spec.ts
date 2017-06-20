@@ -17,6 +17,7 @@ chai.use(require('chai-http'));
 describe('Authorizations route', () => {
   let adminToken: string;
   let johnnyToken: string;
+  let janeToken: string;
   let adminUser: IUserModel;
   let regularUser: IUserModel;
   let verifiedUser: IUserModel;
@@ -76,7 +77,14 @@ describe('Authorizations route', () => {
                   .send({ email: 'john.smith@gmail.com', password: 'johnny' })
                   .end((err, res) => {
                     johnnyToken = res.body.token;
-                    done();
+                    chai.request(server)
+                      .post('/api/login')
+                      .set('content-type', 'application/x-www-form-urlencoded')
+                      .send({ email: 'jane.doe@gmail.com', password: 'jane' })
+                      .end((err, res) => {
+                        janeToken = res.body.token;
+                        done();
+                      });
                   });
               });
           });
@@ -156,7 +164,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -179,7 +187,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -203,7 +211,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Manage,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -214,7 +222,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -246,7 +254,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'monty_article'
+          id: 'monty_article'
         },
         decision: Decision.Permit
       };
@@ -257,7 +265,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Update,
         resource: {
-          articleID: 'monty_article'
+          id: 'monty_article'
         },
         decision: Decision.Permit
       };
@@ -290,7 +298,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read | Action.Update,
         resource: {
-          articleID: 'monty_article'
+          id: 'monty_article'
         },
         decision: Decision.Permit
       };
@@ -300,7 +308,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Update,
         resource: {
-          articleID: 'monty_article'
+          id: 'monty_article'
         },
         decision: Decision.Deny // <= Here we remove the privilege
       };
@@ -335,7 +343,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          id: '456_article'
         },
         decision: Decision.Permit,
       };
@@ -360,7 +368,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          id: '456_article'
         },
         decision: Decision.Permit,
       };
@@ -385,7 +393,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          id: '456_article'
         },
         decision: Decision.Permit,
       };
@@ -409,7 +417,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          id: '456_article'
         },
         decision: Decision.Permit,
       };
@@ -433,7 +441,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: '456_article'
+          id: '456_article'
         },
         decision: Decision.Permit,
       };
@@ -482,7 +490,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -548,7 +556,7 @@ describe('Authorizations route', () => {
         },
         action: Action.Read,
         resource: {
-          articleID: 'johnny_article'
+          id: 'johnny_article'
         },
         decision: Decision.Permit,
       };
@@ -586,8 +594,52 @@ describe('Authorizations route', () => {
         res.should.have.status(OK);
         res.body.success.should.be.true;
         const rules: IRule[] = res.body.message;
-        rules.length.should.be.eql(5);
+        rules.length.should.be.eql(6);
         done();
       });
+  });
+
+  describe('/GET /api/authorizations/resources/:resourceID', () => {
+
+    it('should return a resource\'s permissions to subjects with Manage privileges for that resource', () => {
+      const id = 'star_wars';
+      chai.request(server)
+        .get(`/api/authorizations/resources/${id}`)
+        .set('content-type', 'application/json')
+        .set('x-access-token', johnnyToken)
+        .end((err, res) => {
+          res.should.have.status(OK);
+          res.body.success.should.be.true;
+          const rules: IRule[] = res.body.message;
+          rules.length.should.be.eql(3);
+        });
+    });
+
+    it('should return a resource\'s permissions to admins', () => {
+      const id = 'star_wars';
+      chai.request(server)
+        .get(`/api/authorizations/resources/${id}`)
+        .set('content-type', 'application/json')
+        .set('x-access-token', adminToken)
+        .end((err, res) => {
+          res.should.have.status(OK);
+          res.body.success.should.be.true;
+          const rules: IRule[] = res.body.message;
+          rules.length.should.be.eql(3);
+        });
+    });
+
+    it('should NOT return a resource\'s permissions to subjects who do not have Manage privileges for that resource', () => {
+      const id = 'star_wars';
+      chai.request(server)
+        .get(`/api/authorizations/resources/${id}`)
+        .set('content-type', 'application/json')
+        .set('x-access-token', janeToken)
+        .end((err, res) => {
+          res.should.have.status(UNAUTHORIZED);
+          res.body.success.should.be.false;
+        });
+    });
+
   });
 });

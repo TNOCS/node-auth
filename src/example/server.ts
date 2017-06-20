@@ -89,7 +89,7 @@ const callback = (err: Error, ps: IPolicyStore) => {
   const pep = auth.pep;
   const cop = pep.getPolicyEnforcer('Main policy set');
 
-  server.all('/protected/:articleID', cop, (req, res, next) => {
+  server.all('/protected/:id', cop, (req, res, next) => {
     res.json({ success: true });
   });
 
@@ -139,28 +139,49 @@ PolicyStoreFactory('example-policies.json', callback, [{
       action: Action.Manage,
       decision: Decision.Permit,
       resource: {
-        articleID: ['johnny_article']
+        id: 'johnny_article'
       }
     }, {
       subject: { email: 'john.smith@gmail.com' },
       action: Action.Manage,
       decision: Decision.Permit,
       resource: {
-        articleID: ['monty_article']
+        id: 'monty_article'
+      }
+    }, {
+      subject: { email: 'john.smith@gmail.com' },
+      action: Action.Manage,
+      decision: Decision.Permit,
+      resource: {
+        id: 'star_wars'
+      }
+    }, {
+      subject: { email: 'luke@skywalker.com' },
+      action: Action.Read,
+      decision: Decision.Permit,
+      resource: {
+        id: 'star_wars'
+      }
+    }, {
+      subject: { email: 'leila@skywalker.com' },
+      action: Action.Author,
+      decision: Decision.Permit,
+      resource: {
+        id: 'star_wars'
       }
     }, {
       subject: { _id: '456' },
       action: Action.Author,
       decision: Decision.Permit,
       resource: {
-        articleID: ['456_article']
+        id: '456_article'
       }
     }, {
       desc: 'Anyone can read public resources',
       action: Action.Read,
       decision: Decision.Permit,
       resource: {
-        articleID: ['public_article']
+        id: 'public_article'
       }
     }, {
       desc: 'Subscribed users can create new resources',

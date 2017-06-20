@@ -1,6 +1,7 @@
 import { UNAUTHORIZED } from 'http-status-codes';
+import { Request, Response, NextFunction} from 'express';
 // See also https://scotch.io/tutorials/authenticate-a-node-js-api-with-json-web-tokens
-// import { Application, Response, NextFunction, Router } from 'express';
+// import { Application, Response, NextFunction, Router, Request } from 'express';
 import * as express from 'express';
 // import { Request as _Request } from '~express/lib/request';
 // import { Response as _Response } from '~express/lib/response';
@@ -155,17 +156,26 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
 
   const authorizationRoute = getRoute(options.authorizations, '/authorizations');
   if (authorizationRoute) {
-    apiRoutes.route(authorizationRoute)
-      .all((req, res, next) => {
+    const cleanupJSON = (req: Request, res: Response, next: NextFunction) => {
         // In case the body is not properly send as JSON, correct some issues.
         if (req.body.hasOwnProperty('action') && typeof req.body['action'] === 'string') { req.body['action'] = +req.body['action']; }
         if (req.body.hasOwnProperty('decision') && typeof req.body['decision'] === 'string') { req.body['decision'] = +req.body['decision']; }
         next();
-       })
-      .get(authzRoute.getPrivileges)
+    };
+    apiRoutes.route(authorizationRoute)
+      .all(cleanupJSON)
+      .get(authzRoute.getSubjectPrivileges)
       .put(authzRoute.updatePrivileges)
       .delete(authzRoute.deletePrivileges)
       .post(authzRoute.createPrivileges);
+
+    const resource2JSON = (req: Request, res: Response, next: NextFunction) => {
+        if (req.params.hasOwnProperty('resourceID')) { req.body = Object.assign(req.body, { resource: { id: req.params['resourceID'] } }); }
+        next();
+    };
+    apiRoutes.route(`${authorizationRoute}/resources/:resourceID`)
+      .get(resource2JSON)
+      .get(authzRoute.getResourcePrivileges);
   }
 
   const usersRoute = getRoute(options.users, '/users');
