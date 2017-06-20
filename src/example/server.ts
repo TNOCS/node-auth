@@ -153,21 +153,21 @@ PolicyStoreFactory('example-policies.json', callback, [{
       action: Action.Manage,
       decision: Decision.Permit,
       resource: {
-        id: 'star_wars'
+        domain: 'star_wars'
       }
     }, {
       subject: { email: 'luke@skywalker.com' },
       action: Action.Read,
       decision: Decision.Permit,
       resource: {
-        id: 'star_wars'
+        domain: 'star_wars'
       }
     }, {
       subject: { email: 'leila@skywalker.com' },
       action: Action.Author,
       decision: Decision.Permit,
       resource: {
-        id: 'star_wars'
+        domain: 'star_wars'
       }
     }, {
       subject: { _id: '456' },
