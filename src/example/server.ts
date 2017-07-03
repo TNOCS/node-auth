@@ -14,9 +14,13 @@ export const server: Application = express();
 // configuration =========
 // =======================
 
+interface IConnectionOptions extends mongoose.ConnectionOptions {
+  useMongoClient: boolean;
+}
+
 (<any>mongoose).Promise = Promise;
 const port = process.env.PORT || config.port || 3210;
-mongoose.connect(config.database); // connect to database
+mongoose.connect(config.database, <IConnectionOptions>{ useMongoClient: true }); // connect to database
 // server.set("jwtAuthSecret", config.secret); // secret variable
 
 const db = mongoose.connection;
