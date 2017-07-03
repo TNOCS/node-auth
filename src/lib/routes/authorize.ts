@@ -98,8 +98,8 @@ function crudPrivileges(change: CRUD, req: Request, res: Response, handler: (pr:
   if (!subject) { return; }
   const newPrivilege = getPrivilegeRequest(req, res);
   if (!newPrivilege) { return; }
-  if (change !== 'create' && !newPrivilege.hasOwnProperty('meta')) {
-    res.status(UNAUTHORIZED).json({ success: false, message: 'Metadata is missing, original rule should be returned' });
+  if (change !== 'create' && !newPrivilege.hasOwnProperty('$loki')) {
+    res.status(UNAUTHORIZED).json({ success: false, message: '$loki key is missing, original rule should be returned' });
     return;
   }
   checkSubjectHasManagementPermission(subject, newPrivilege, handler(newPrivilege));
