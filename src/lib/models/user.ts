@@ -70,11 +70,14 @@ const UserSchema = new Schema({
     required: true,
     dropDups: true,
     validate: {
-      validator: (email, cb) => {
-        if (!validateEmailAddress(email)) { cb(false); }
-        User.find({ email: email }, (err, docs) => {
-          cb(docs.length === 0);
-        });
+      isAsync: true,
+      validator: (email: string, cb: Function) => {
+        setTimeout(() => {
+          if (!validateEmailAddress(email)) { cb(false, `${email} is not valid`); }
+          User.find({ email: email }, (err, docs) => {
+            cb(docs.length === 0);
+          });
+        }, 5);
       },
       message: 'User already exists!'
     }

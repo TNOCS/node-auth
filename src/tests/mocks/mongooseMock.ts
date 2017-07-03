@@ -38,7 +38,7 @@ const Schema = function () {
 
   Model.path = () => {
     return {
-      validate: sinon.stub(),
+      validate: sinon.stub()
     };
   };
 
