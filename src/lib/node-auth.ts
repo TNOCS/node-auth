@@ -170,10 +170,10 @@ function createRoutes(secretKey: string, options: INodeAuthOptions) {
       .post(authzRoute.createPrivileges);
 
     const resource2JSON = (req: Request, res: Response, next: NextFunction) => {
-        if (req.params.hasOwnProperty('resourceID')) { req.body = Object.assign(req.body, { resource: { domain: req.params['resourceID'] } }); }
+        req.body = { resource: req.query };
         next();
     };
-    apiRoutes.route(`${authorizationRoute}/resources/:resourceID`)
+    apiRoutes.route(`${authorizationRoute}/resources`)
       .get(resource2JSON)
       .get(authzRoute.getResourcePrivileges);
   }

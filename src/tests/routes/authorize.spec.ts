@@ -599,12 +599,12 @@ describe('Authorizations route', () => {
       });
   });
 
-  describe('/GET /api/authorizations/resources/:resourceID', () => {
+  describe('/GET /api/authorizations/resources?param=value', () => {
 
     it('should return a resource\'s permissions to subjects with Manage privileges for that resource', () => {
       const id = 'star_wars';
       chai.request(server)
-        .get(`/api/authorizations/resources/${id}`)
+        .get(`/api/authorizations/resources?domain=${id}`)
         .set('content-type', 'application/json')
         .set('x-access-token', johnnyToken)
         .end((err, res) => {
@@ -618,7 +618,7 @@ describe('Authorizations route', () => {
     it('should return a resource\'s permissions to admins', () => {
       const id = 'star_wars';
       chai.request(server)
-        .get(`/api/authorizations/resources/${id}`)
+        .get(`/api/authorizations/resources?domain=${id}`)
         .set('content-type', 'application/json')
         .set('x-access-token', adminToken)
         .end((err, res) => {
@@ -632,7 +632,7 @@ describe('Authorizations route', () => {
     it('should NOT return a resource\'s permissions to subjects who do not have Manage privileges for that resource', () => {
       const id = 'star_wars';
       chai.request(server)
-        .get(`/api/authorizations/resources/${id}`)
+        .get(`/api/authorizations/resources?domain=${id}`)
         .set('content-type', 'application/json')
         .set('x-access-token', janeToken)
         .end((err, res) => {
